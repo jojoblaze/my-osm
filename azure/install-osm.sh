@@ -1,16 +1,25 @@
 #!/bin/bash
 
+AfricaMapFileName=africa-latest.osm.pbf
+AntarcticaMapFileName=antarctica-latest.osm.pbf
+EuropeMapFileName=europe-latest.osm.pbf
+CentralAmericaMapFileName=central-america-latest.osm.pbf
+NorthAmericaMapFileName=north-america-latest.osm.pbf
+SouthAmericaMapFileName=south-america-latest.osm.pbf
+
+MapDataFileName=$CentralAmericaMapFileName
+
 PostgreSQLUserName=$1
 
 
 # *** Step 1 - Update system ***
-sudo apt update -y
+sudo apt-get update -y
 
-sudo apt upgrade -y
+sudo apt-get upgrade -y
 
 
 # *** Step 2 - Install PostgreSQL Database Server with PostGIS ***
-sudo apt install postgresql postgresql-contrib postgis postgresql-9.5-postgis-2.2 -y
+sudo apt-get install postgresql postgresql-contrib postgis postgresql-10-postgis-2.4 -y
 
 sudo -u postgres -i
 
@@ -29,20 +38,19 @@ psql -c "CREATE EXTENSION postgis;" -d gis
 exit
 
 # Create osm user on your operating system so the tile server can run as osm user.
-sudo adduser $PostgreSQLUserName
-
+sudo adduser $PostgreSQLUserName --disabled-password --shell /bin/bash --gecos ""
 
 
 # *** Step 3: Download Map Stylesheet and Map Data ***
-su - osm
+sudo su - $PostgreSQLUserName
 
-wget https://github.com/gravitystorm/openstreetmap-carto/archive/v2.41.0.tar.gz
-
-
-tar xvf v2.41.0.tar.gz
+wget https://github.com/gravitystorm/openstreetmap-carto/archive/v4.21.1.tar.gz
 
 
-wget -c http://download.geofabrik.de/central-america-latest.osm.pbf
+tar xvf v4.21.1.tar.gz
+
+
+wget -c http://download.geofabrik.de/$MapDataFileName
 
 exit
 
@@ -62,11 +70,11 @@ exit
 
 
 # *** Step 4: Import the Map Data to PostgreSQL ***
-sudo apt install osm2pgsql -y
+sudo apt-get install osm2pgsql -y
 
 su - $PostgreSQLUserName
 
-osm2pgsql --slim -d gis -C 3600 --hstore -S openstreetmap-carto-2.41.0/openstreetmap-carto.style central-america-latest.osm.pbf
+osm2pgsql --slim -d gis -C 3600 --hstore -S openstreetmap-carto-4.21.1/openstreetmap-carto.style $MapDataFileName
 
 # osm2gpsql will run in slim mode which is recommended over the normal mode. -d stands for --database. -C flag specify the cache size in MB. Bigger cache size results in faster import speed but you need to have enough RAM to use cache. -S flag specify the style file. And finally you need to specify the map data file.
 
@@ -99,7 +107,7 @@ sudo apt install curl unzip gdal-bin mapnik-utils node-carto -y
 
 su - osm
 
-cd openstreetmap-carto-2.41.0/
+cd openstreetmap-carto-4.21.1/
 
 ./get-shapefiles.sh
 
@@ -113,7 +121,7 @@ exit
 # In the [default] section, change the value of XML and HOST to
 # XML=/home/osm/openstreetmap-carto-2.41.0/style.xml
 # HOST=localhost
-sed -i "s/XML=\/home\/osm\/openstreetmap-carto-2.41.0\/style.xml/XML=\/home\/osm\/openstreetmap-carto-2.41.0\/style.xml/g" /usr/local/etc/renderd.conf
+sed -i "s/XML=\/home\/osm\/openstreetmap-carto-4.21.1\/style.xml/XML=\/home\/osm\/openstreetmap-carto-4.21.1\/style.xml/g" /usr/local/etc/renderd.conf
 sed -i "s/HOST=tile.openstreetmap.org/HOST=localhost/g" /usr/local/etc/renderd.conf
 
 
@@ -149,7 +157,7 @@ sudo systemctl enable renderd
 
 
 # *** Step 8: Configure Apache ***
-sudo apt install apache2 -y
+sudo apt-get install apache2 -y
 
 # Create a module load file
 echo "LoadModule tile_module /usr/lib/apache2/modules/mod_tile.so" >> /etc/apache2/mods-available/mod_tile.load
