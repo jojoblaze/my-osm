@@ -2,6 +2,8 @@
 
 AfricaMapFileName=africa-latest.osm.pbf
 AntarcticaMapFileName=antarctica-latest.osm.pbf
+AsiaMapFileName=asia-latest.osm.pbf
+AustraliaMapFileName=australia-oceania-latest.osm.pbf
 EuropeMapFileName=europe-latest.osm.pbf
 CentralAmericaMapFileName=central-america-latest.osm.pbf
 NorthAmericaMapFileName=north-america-latest.osm.pbf
@@ -88,7 +90,7 @@ exit
 
 # First install build dependency.
 
-sudo apt install git autoconf libtool libmapnik-dev apache2-dev -y
+sudo apt-get install git autoconf libtool libmapnik-dev apache2-dev -y
 
 git clone https://github.com/openstreetmap/mod_tile.git
 
