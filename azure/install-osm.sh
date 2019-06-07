@@ -95,7 +95,7 @@ sudo make install-mod_tile
 
 # *** Step 6: Generate Mapnik Stylesheet ***
 
-sudo apt install curl unzip gdal-bin mapnik-utils node-carto
+sudo apt install curl unzip gdal-bin mapnik-utils node-carto -y
 
 su - osm
 
@@ -149,7 +149,7 @@ sudo systemctl enable renderd
 
 
 # *** Step 8: Configure Apache ***
-sudo apt install apache2
+sudo apt install apache2 -y
 
 # Create a module load file
 echo "LoadModule tile_module /usr/lib/apache2/modules/mod_tile.so" >> /etc/apache2/mods-available/mod_tile.load
