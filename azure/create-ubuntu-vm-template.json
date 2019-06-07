@@ -243,32 +243,32 @@
                 }
             },
             "resources": [
-              {
-                "apiVersion": "2016-04-30-preview",
-                "type": "extensions",
-                "name": "config-app",
-                "location": "[resourceGroup().location]",
-                "dependsOn": [
-                  "[concat('Microsoft.Compute/virtualMachines/', concat(parameters('computerName'),copyindex()))]"
-                ],
-                "tags": {
-                  "displayName": "config-app"
-                },
-                "properties": {
-                  "publisher": "Microsoft.Azure.Extensions",
-                  "type": "CustomScript",
-                  "typeHandlerVersion": "2.0",
-                  "autoUpgradeMinorVersion": true,
-                  "settings": {
-                    "fileUris": [
-                      "https://raw.githubusercontent.com/Microsoft/dotnet-core-sample-templates/master/dotnet-core-music-linux/scripts/install-osm.sh"
-                    ]
-                  },
-                  "protectedSettings": {
-                    "commandToExecute": "[concat('sudo sh install-osm.sh ',variables('osmUserName'), ' ')]"
-                  }
+                {
+                    "apiVersion": "2016-04-30-preview",
+                    "type": "extensions",
+                    "name": "config-app",
+                    "location": "[resourceGroup().location]",
+                    "dependsOn": [
+                        "[concat('Microsoft.Compute/virtualMachines/', concat(parameters('computerName')))]"
+                    ],
+                    "tags": {
+                        "displayName": "config-app"
+                    },
+                    "properties": {
+                        "publisher": "Microsoft.Azure.Extensions",
+                        "type": "CustomScript",
+                        "typeHandlerVersion": "2.0",
+                        "autoUpgradeMinorVersion": true,
+                        "settings": {
+                            "fileUris": [
+                                "https://raw.githubusercontent.com/jojoblaze/my-osm/master/azure/install-osm.sh"
+                            ]
+                        },
+                        "protectedSettings": {
+                            "commandToExecute": "[concat('sudo sh install-osm.sh ',variables('osmUserName'), ' ')]"
+                        }
+                    }
                 }
-              }
             ]
         }
     ],

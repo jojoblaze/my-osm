@@ -4,13 +4,13 @@ PostgreSQLUserName=$1
 
 
 # *** Step 1 - Update system ***
-sudo apt update
+sudo apt update -y
 
-sudo apt upgrade
+sudo apt upgrade -y
 
 
 # *** Step 2 - Install PostgreSQL Database Server with PostGIS ***
-sudo apt install postgresql postgresql-contrib postgis postgresql-9.5-postgis-2.2
+sudo apt install postgresql postgresql-contrib postgis postgresql-9.5-postgis-2.2 -y
 
 sudo -u postgres -i
 
@@ -62,7 +62,7 @@ exit
 
 
 # *** Step 4: Import the Map Data to PostgreSQL ***
-sudo apt install osm2pgsql
+sudo apt install osm2pgsql -y
 
 su - $PostgreSQLUserName
 
@@ -80,7 +80,7 @@ exit
 
 # First install build dependency.
 
-sudo apt install git autoconf libtool libmapnik-dev apache2-dev
+sudo apt install git autoconf libtool libmapnik-dev apache2-dev -y
 
 git clone https://github.com/openstreetmap/mod_tile.git
 
