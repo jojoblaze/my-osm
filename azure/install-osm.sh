@@ -105,7 +105,7 @@ sudo make install-mod_tile
 
 # *** Step 6: Generate Mapnik Stylesheet ***
 
-sudo apt install curl unzip gdal-bin mapnik-utils node-carto -y
+sudo apt-get install curl unzip gdal-bin mapnik-utils node-carto -y
 
 su - osm
 
