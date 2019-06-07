@@ -1,0 +1,281 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "computerName": {
+            "type": "string",
+            "metadata": {
+                "description": "Virtual Machine name."
+            }
+        },
+        "adminUsername": {
+            "type": "string",
+            "metadata": {
+                "description": "User name for the Virtual Machine."
+            }
+        },
+        "authenticationType": {
+            "type": "string",
+            "defaultValue": "sshPublicKey",
+            "allowedValues": [
+                "sshPublicKey",
+                "password"
+            ],
+            "metadata": {
+                "description": "Type of authentication to use on the Virtual Machine. SSH key is recommended."
+            }
+        },
+        "adminPasswordOrKey": {
+            "type": "securestring",
+            "metadata": {
+                "description": "SSH Key or password for the Virtual Machine. SSH key is recommended."
+            }
+        },
+        "ubuntuOSVersion": {
+            "type": "string",
+            "defaultValue": "16.04.0-LTS",
+            "allowedValues": [
+                "12.04.5-LTS",
+                "14.04.5-LTS",
+                "15.10",
+                "16.04.0-LTS"
+            ],
+            "metadata": {
+                "description": "The Ubuntu version for the VM. This will pick a fully patched image of this given Ubuntu version."
+            }
+        },
+        "location": {
+            "type": "string",
+            "defaultValue": "[resourceGroup().location]",
+            "metadata": {
+                "description": "Location for all resources."
+            }
+        }
+    },
+    "variables": {
+        "storageAccountName": "[concat(uniquestring(resourceGroup().id), 'salinuxvm')]",
+        "imagePublisher": "Canonical",
+        "imageOffer": "UbuntuServer",
+        "nicName": "myVMNic",
+        "addressPrefix": "10.0.0.0/16",
+        "subnetName": "Subnet",
+        "subnetPrefix": "10.0.0.0/24",
+        "storageAccountType": "Standard_LRS",
+        "publicIPAddressName": "myPublicIP",
+        "publicIPAddressType": "Dynamic",
+        "vmSize": "Standard_A1",
+        "virtualNetworkName": "MyVNET",
+        "linuxConfiguration": {
+            "disablePasswordAuthentication": true,
+            "ssh": {
+                "publicKeys": [
+                    {
+                        "path": "[concat('/home/', parameters('adminUsername'), '/.ssh/authorized_keys')]",
+                        "keyData": "[parameters('adminPasswordOrKey')]"
+                    }
+                ]
+            }
+        },
+        "subnetRef": "[resourceId('Microsoft.Network/virtualNetworks/subnets', variables('virtualNetworkName'), variables('subnetName'))]",
+        "networkSecurityGroup": "mySecurityGroup",
+        "osmUserName": "osm"
+    },
+    "functions": [],
+    "resources": [
+        {
+            "apiVersion": "2016-03-30",
+            "type": "Microsoft.Network/networkSecurityGroups",
+            "name": "[variables('networkSecurityGroup')]",
+            "location": "[resourceGroup().location]",
+            "tags": {
+                "displayName": "network-security-group"
+            },
+            "properties": {
+                "securityRules": [
+                    {
+                        "name": "http",
+                        "properties": {
+                            "description": "http endpoint",
+                            "protocol": "Tcp",
+                            "sourcePortRange": "*",
+                            "destinationPortRange": "80",
+                            "sourceAddressPrefix": "*",
+                            "destinationAddressPrefix": "*",
+                            "access": "Allow",
+                            "priority": 100,
+                            "direction": "Inbound"
+                        }
+                    },
+                    {
+                        "name": "ssh",
+                        "properties": {
+                            "description": "ssh endpoint",
+                            "protocol": "Tcp",
+                            "sourcePortRange": "*",
+                            "destinationPortRange": "22",
+                            "sourceAddressPrefix": "*",
+                            "destinationAddressPrefix": "*",
+                            "access": "Allow",
+                            "priority": 200,
+                            "direction": "Inbound"
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "type": "Microsoft.Storage/storageAccounts",
+            "name": "[variables('storageAccountName')]",
+            "apiVersion": "2018-07-01",
+            "location": "[parameters('location')]",
+            "sku": {
+                "name": "[variables('storageAccountType')]"
+            },
+            "kind": "Storage",
+            "properties": {}
+        },
+        {
+            "apiVersion": "2017-10-01",
+            "type": "Microsoft.Network/publicIPAddresses",
+            "name": "[variables('publicIPAddressName')]",
+            "location": "[parameters('location')]",
+            "properties": {
+                "publicIPAllocationMethod": "[variables('publicIPAddressType')]"
+            }
+        },
+        {
+            "apiVersion": "2016-03-30",
+            "type": "Microsoft.Network/virtualNetworks",
+            "name": "[variables('virtualNetworkName')]",
+            "location": "[resourceGroup().location]",
+            "properties": {
+                "addressSpace": {
+                    "addressPrefixes": [
+                        "[variables('addressPrefix')]"
+                    ]
+                },
+                "subnets": [
+                    {
+                        "name": "[variables('subnetName')]",
+                        "properties": {
+                            "addressPrefix": "[variables('subnetPrefix')]"
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "apiVersion": "2016-03-30",
+            "type": "Microsoft.Network/networkInterfaces",
+            "name": "[variables('nicName')]",
+            "location": "[parameters('location')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Network/publicIPAddresses/', variables('publicIPAddressName'))]",
+                "[resourceId('Microsoft.Network/virtualNetworks/', variables('virtualNetworkName'))]"
+            ],
+            "properties": {
+                "ipConfigurations": [
+                    {
+                        "name": "ipconfig1",
+                        "properties": {
+                            "privateIPAllocationMethod": "Dynamic",
+                            "publicIPAddress": {
+                                "id": "[resourceId('Microsoft.Network/publicIPAddresses',variables('publicIPAddressName'))]"
+                            },
+                            "subnet": {
+                                "id": "[variables('subnetRef')]"
+                            }
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "apiVersion": "2016-04-30-preview",
+            "type": "Microsoft.Compute/virtualMachines",
+            "name": "[parameters('computerName')]",
+            "location": "[parameters('location')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Storage/storageAccounts/', variables('storageAccountName'))]",
+                "[resourceId('Microsoft.Network/networkInterfaces/', variables('nicName'))]"
+            ],
+            "properties": {
+                "hardwareProfile": {
+                    "vmSize": "[variables('vmSize')]"
+                },
+                "osProfile": {
+                    "computerName": "[parameters('computerName')]",
+                    "adminUsername": "[parameters('adminUsername')]",
+                    "adminPassword": "[parameters('adminPasswordOrKey')]",
+                    "linuxConfiguration": "[if(equals(parameters('authenticationType'), 'password'), json('null'), variables('linuxConfiguration'))]"
+                },
+                "storageProfile": {
+                    "imageReference": {
+                        "publisher": "[variables('imagePublisher')]",
+                        "offer": "[variables('imageOffer')]",
+                        "sku": "[parameters('ubuntuOSVersion')]",
+                        "version": "latest"
+                    },
+                    "osDisk": {
+                        "name": "myManagedOSDisk",
+                        "createOption": "FromImage"
+                    },
+                    "dataDisks": [
+                        {
+                            "diskSizeGB": 1023,
+                            "lun": 0,
+                            "createOption": "Empty"
+                        }
+                    ]
+                },
+                "networkProfile": {
+                    "networkInterfaces": [
+                        {
+                            "id": "[resourceId('Microsoft.Network/networkInterfaces',variables('nicName'))]"
+                        }
+                    ]
+                },
+                "diagnosticsProfile": {
+                    "bootDiagnostics": {
+                        "enabled": true,
+                        "storageUri": "[concat(reference(concat('Microsoft.Storage/storageAccounts/', variables('storageAccountName')), '2016-01-01').primaryEndpoints.blob)]"
+                    }
+                }
+            },
+            "resources": [
+              {
+                "apiVersion": "2016-04-30-preview",
+                "type": "extensions",
+                "name": "config-app",
+                "location": "[resourceGroup().location]",
+                "dependsOn": [
+                  "[concat('Microsoft.Compute/virtualMachines/', concat(parameters('computerName'),copyindex()))]"
+                ],
+                "tags": {
+                  "displayName": "config-app"
+                },
+                "properties": {
+                  "publisher": "Microsoft.Azure.Extensions",
+                  "type": "CustomScript",
+                  "typeHandlerVersion": "2.0",
+                  "autoUpgradeMinorVersion": true,
+                  "settings": {
+                    "fileUris": [
+                      "https://raw.githubusercontent.com/Microsoft/dotnet-core-sample-templates/master/dotnet-core-music-linux/scripts/install-osm.sh"
+                    ]
+                  },
+                  "protectedSettings": {
+                    "commandToExecute": "[concat('sudo sh install-osm.sh ',variables('osmUserName'), ' ')]"
+                  }
+                }
+              }
+            ]
+        }
+    ],
+    "outputs": {
+        "fqdn": {
+            "value": "[reference(resourceId('Microsoft.Network/publicIPAddresses',variables('publicIpAddressName')),providers('Microsoft.Network', 'publicIPAddresses').apiVersions[0]).dnsSettings.fqdn]",
+            "type": "string"
+        }
+    }
+}

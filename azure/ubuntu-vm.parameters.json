@@ -1,0 +1,18 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "computerName": {
+      "value": "myUbuntuVM"
+    },
+    "adminUserName": {
+      "value": "ubuntu"
+    },
+    "adminPasswordOrKey": {
+      "value": "UbuntuAzure12345678"
+    },
+    "authenticationType": {
+      "value": "password"
+    }
+  }
+}
