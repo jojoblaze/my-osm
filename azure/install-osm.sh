@@ -1,5 +1,8 @@
 #!/bin/bash
 
+echo "###-- Setting Frontend as Non-Interactive"
+export DEBIAN_FRONTEND=noninteractive
+
 AfricaMapFileName=africa-latest.osm.pbf
 AntarcticaMapFileName=antarctica-latest.osm.pbf
 AsiaMapFileName=asia-latest.osm.pbf
@@ -15,12 +18,14 @@ PostgreSQLUserName=$1
 
 
 # *** Step 1 - Update system ***
+echo "*** Step 1 - Update system ***"
 sudo apt-get update -y
 
 sudo apt-get upgrade -y
 
 
 # *** Step 2 - Install PostgreSQL Database Server with PostGIS ***
+echo "*** Step 2 - Install PostgreSQL Database Server with PostGIS ***"
 sudo apt-get install postgresql postgresql-contrib postgis postgresql-10-postgis-2.4 -y
 
 sudo -u postgres -i
@@ -44,6 +49,7 @@ sudo adduser $PostgreSQLUserName --disabled-password --shell /bin/bash --gecos "
 
 
 # *** Step 3: Download Map Stylesheet and Map Data ***
+echo '*** Step 3: Download Map Stylesheet and Map Data ('$MapDataFileName')***'
 sudo su - $PostgreSQLUserName
 
 wget https://github.com/gravitystorm/openstreetmap-carto/archive/v4.21.1.tar.gz
@@ -72,6 +78,7 @@ exit
 
 
 # *** Step 4: Import the Map Data to PostgreSQL ***
+echo '*** Step 4: Import the Map Data to PostgreSQL ***'
 sudo apt-get install osm2pgsql -y
 
 su - $PostgreSQLUserName
@@ -85,7 +92,7 @@ exit
 
 
 # *** Step 5: Install mod_tile ***
-
+echo '*** Step 5: Install mod_tile ***'
 # mod_tile is an Apache module that is required to serve tiles. Currently no binary package is available for Ubuntu. We can compile it from Github repository.
 
 # First install build dependency.
@@ -104,7 +111,7 @@ sudo make install
 sudo make install-mod_tile
 
 # *** Step 6: Generate Mapnik Stylesheet ***
-
+echo '*** Step 6: Generate Mapnik Stylesheet ***'
 sudo apt-get install curl unzip gdal-bin mapnik-utils node-carto -y
 
 su - osm
@@ -119,7 +126,7 @@ exit
 
 
 # *** Step 7: Configuring renderd ***
-
+echo '*** Step 7: Configuring renderd ***'
 # In the [default] section, change the value of XML and HOST to
 # XML=/home/osm/openstreetmap-carto-2.41.0/style.xml
 # HOST=localhost
@@ -159,6 +166,7 @@ sudo systemctl enable renderd
 
 
 # *** Step 8: Configure Apache ***
+echo '*** Step 8: Configure Apache ***'
 sudo apt-get install apache2 -y
 
 # Create a module load file
