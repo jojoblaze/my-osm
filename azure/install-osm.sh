@@ -21,7 +21,7 @@ PostgreSQLUserName=$1
 #echo "*** Step 1 - Update system ***"
 #sudo apt-get update -y
 #sudo apt-get upgrade -y
-
+echo 'using user: '$(whoami)' home: '$(pwd)
 
 # *** Step 2 - Install PostgreSQL Database Server with PostGIS ***
 echo "*** Step 2 - Install PostgreSQL Database Server with PostGIS ***"
@@ -85,6 +85,9 @@ sudo apt-get install osm2pgsql -y
 
 sudo su - $PostgreSQLUserName
 
+echo 'using user: '$(whoami)' home: '$(pwd)
+
+echo 'running osm2pgsql'
 # osm2pgsql --slim -d gis -C 3600 --hstore -S openstreetmap-carto-4.21.1/openstreetmap-carto.style $MapDataFileName
 osm2pgsql --slim -d gis -C 1800 --hstore -S openstreetmap-carto-4.21.1/openstreetmap-carto.style $MapDataFileName
 
@@ -101,6 +104,9 @@ echo '*** Step 5: Install mod_tile ***'
 # First install build dependency.
 echo '* Install build dependency *'
 sudo apt-get install git autoconf libtool libmapnik-dev apache2-dev -y
+
+
+echo 'using user: '$(whoami)' home: '$(pwd)
 
 echo '* cloning mod_tile from GitHub *'
 git clone https://github.com/openstreetmap/mod_tile.git
@@ -137,11 +143,13 @@ echo '* replacing values in renderd.conf *'
 # In the [default] section, change the value of XML and HOST to
 # XML=/home/osm/openstreetmap-carto-2.41.0/style.xml
 # HOST=localhost
-sed -i "s/XML=\/home\/osm\/openstreetmap-carto-4.21.1\/style.xml/XML=\/home\/osm\/openstreetmap-carto-4.21.1\/style.xml/g" /usr/local/etc/renderd.conf
+# sed -i "s/XML=\/home\/osm\/openstreetmap-carto-4.21.1\/style.xml/XML=\/home\/osm\/openstreetmap-carto-4.21.1\/style.xml/g" /usr/local/etc/renderd.conf
+sed -i "s/XML=\/home\/jburgess\/osm\/svn.openstreetmap.org\/applications\/rendering\/mapnik\/osm-local.xml/XML=\/home\/osm\/openstreetmap-carto-4.21.1\/style.xml/g" /usr/local/etc/renderd.conf
+
 sed -i "s/HOST=tile.openstreetmap.org/HOST=localhost/g" /usr/local/etc/renderd.conf
 
 # In [mapnik] section, change the value of plugins_dir
-sed -i "s/plugins_dir=\/usr\/lib\/mapnik\/input\//plugins_dir=\/usr\/lib\/mapnik\/3.0\/input\//g" /usr/local/etc/renderd.conf
+sed -i "s/plugins_dir=\/usr\/lib\/mapnik\/input/plugins_dir=\/usr\/lib\/mapnik\/3.0\/input/g" /usr/local/etc/renderd.conf
 
 
 # Install renderd init script by copying the sample init script.
@@ -197,6 +205,10 @@ sudo ln -s /etc/apache2/mods-available/mod_tile.load /etc/apache2/mods-enabled/
 # ModTileRequestTimeout 0
 # # Timeout before giving up for a tile to be rendered that is otherwise missing
 # ModTileMissingRequestTimeout 30
+
+wget https://raw.githubusercontent.com/jojoblaze/my-osm/master/azure/000-default.conf
+
+mv 000-default.conf /etc/apache2/sites-enabled/000-default.conf
 
 # Save and close the file. Restart Apache.
 echo '* Save and close the file. Restart Apache. *'
