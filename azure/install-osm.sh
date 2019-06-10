@@ -19,9 +19,9 @@ PostgreSQLUserName=$1
 
 # *** Step 1 - Update system ***
 echo "*** Step 1 - Update system ***"
-sudo apt-get update -y
+#sudo apt-get update -y
 
-sudo apt-get upgrade -y
+#sudo apt-get upgrade -y
 
 
 # *** Step 2 - Install PostgreSQL Database Server with PostGIS ***
