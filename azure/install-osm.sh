@@ -46,7 +46,7 @@ sudo -u postgres psql -c "CREATE EXTENSION postgis;" -d gis
 # exit
 
 # Create osm user on your operating system so the tile server can run as osm user.
-echo '* creating operating system user '$PostgreSQLUserName' *'
+echo '* creating operating system user ['$PostgreSQLUserName'] *'
 #sudo adduser $PostgreSQLUserName --disabled-password --shell /bin/bash --gecos ""
 sudo useradd -m $PostgreSQLUserName
 
@@ -62,7 +62,7 @@ tar xvf v4.21.1.tar.gz
 
 wget -c http://download.geofabrik.de/$MapDataFileName
 
-exit
+# exit
 
 
 # Recommendations before Importing Map Data
@@ -90,7 +90,7 @@ osm2pgsql --slim -d gis -C 1800 --hstore -S openstreetmap-carto-4.21.1/openstree
 
 # osm2gpsql will run in slim mode which is recommended over the normal mode. -d stands for --database. -C flag specify the cache size in MB. Bigger cache size results in faster import speed but you need to have enough RAM to use cache. -S flag specify the style file. And finally you need to specify the map data file.
 
-exit
+# exit
 
 
 
