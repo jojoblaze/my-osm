@@ -47,8 +47,9 @@ psql -c "CREATE EXTENSION postgis;" -d gis
 exit
 
 # Create osm user on your operating system so the tile server can run as osm user.
-sudo adduser $PostgreSQLUserName --disabled-password --shell /bin/bash --gecos ""
-
+echo '* creating operating system user '$PostgreSQLUserName' *'
+#sudo adduser $PostgreSQLUserName --disabled-password --shell /bin/bash --gecos ""
+sudo useradd -m $PostgreSQLUserName
 
 # *** Step 3: Download Map Stylesheet and Map Data ***
 echo '*** Step 3: Download Map Stylesheet and Map Data ('$MapDataFileName')***'
@@ -83,7 +84,7 @@ exit
 echo '*** Step 4: Import the Map Data to PostgreSQL ***'
 sudo apt-get install osm2pgsql -y
 
-su - $PostgreSQLUserName
+sudo su - $PostgreSQLUserName
 
 osm2pgsql --slim -d gis -C 3600 --hstore -S openstreetmap-carto-4.21.1/openstreetmap-carto.style $MapDataFileName
 
