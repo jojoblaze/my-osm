@@ -18,9 +18,8 @@ PostgreSQLUserName=$1
 
 
 # *** Step 1 - Update system ***
-echo "*** Step 1 - Update system ***"
+#echo "*** Step 1 - Update system ***"
 #sudo apt-get update -y
-
 #sudo apt-get upgrade -y
 
 
@@ -39,12 +38,12 @@ sudo -u postgres createuser $PostgreSQLUserName
 sudo -u postgres createdb -E UTF8 -O $PostgreSQLUserName gis
 
 # Create hstore and postgis extension on the gis database
-psql -c "CREATE EXTENSION hstore;" -d gis
+sudo -u postgres psql -c "CREATE EXTENSION hstore;" -d gis
 
-psql -c "CREATE EXTENSION postgis;" -d gis
+sudo -u postgres psql -c "CREATE EXTENSION postgis;" -d gis
 
 
-exit
+# exit
 
 # Create osm user on your operating system so the tile server can run as osm user.
 echo '* creating operating system user '$PostgreSQLUserName' *'
@@ -86,7 +85,8 @@ sudo apt-get install osm2pgsql -y
 
 sudo su - $PostgreSQLUserName
 
-osm2pgsql --slim -d gis -C 3600 --hstore -S openstreetmap-carto-4.21.1/openstreetmap-carto.style $MapDataFileName
+# osm2pgsql --slim -d gis -C 3600 --hstore -S openstreetmap-carto-4.21.1/openstreetmap-carto.style $MapDataFileName
+osm2pgsql --slim -d gis -C 1800 --hstore -S openstreetmap-carto-4.21.1/openstreetmap-carto.style $MapDataFileName
 
 # osm2gpsql will run in slim mode which is recommended over the normal mode. -d stands for --database. -C flag specify the cache size in MB. Bigger cache size results in faster import speed but you need to have enough RAM to use cache. -S flag specify the style file. And finally you need to specify the map data file.
 
