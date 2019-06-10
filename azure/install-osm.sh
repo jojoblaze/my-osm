@@ -28,13 +28,15 @@ echo "*** Step 1 - Update system ***"
 echo "*** Step 2 - Install PostgreSQL Database Server with PostGIS ***"
 sudo apt-get install postgresql postgresql-contrib postgis postgresql-10-postgis-2.4 -y
 
-sudo -u postgres -i
+# sudo -u postgres -i
 
 # create a PostgreSQL database user osm
-createuser $PostgreSQLUserName
+#createuser $PostgreSQLUserName
+sudo -u postgres createuser $PostgreSQLUserName
 
-
-createdb -E UTF8 -O $PostgreSQLUserName gis
+#createdb -E UTF8 -O $PostgreSQLUserName gis
+# sudo -u postgres createdb $(whoami)
+sudo -u postgres createdb -E UTF8 -O $PostgreSQLUserName gis
 
 # Create hstore and postgis extension on the gis database
 psql -c "CREATE EXTENSION hstore;" -d gis
