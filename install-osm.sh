@@ -21,7 +21,7 @@ PostgreSQLUserName=$1
 #echo "*** Step 1 - Update system ***"
 #sudo apt-get update -y
 #sudo apt-get upgrade -y
-echo 'using user: '$(whoami)' home: '$(pwd)
+echo 'using user: '$(whoami)' current directory: '$(pwd)
 
 # *** Step 2 - Install PostgreSQL Database Server with PostGIS ***
 echo "*** Step 2 - Install PostgreSQL Database Server with PostGIS ***"
@@ -30,11 +30,9 @@ sudo apt-get install postgresql postgresql-contrib postgis postgresql-10-postgis
 # sudo -u postgres -i
 
 # create a PostgreSQL database user osm
-#createuser $PostgreSQLUserName
 sudo -u postgres createuser $PostgreSQLUserName
 
 #createdb -E UTF8 -O $PostgreSQLUserName gis
-# sudo -u postgres createdb $(whoami)
 sudo -u postgres createdb -E UTF8 -O $PostgreSQLUserName gis
 
 # Create hstore and postgis extension on the gis database
@@ -85,7 +83,7 @@ sudo apt-get install osm2pgsql -y
 
 sudo su - $PostgreSQLUserName
 
-echo 'using user: '$(whoami)' home: '$(pwd)
+echo 'using user: '$(whoami)' current directory: '$(pwd)
 
 echo 'running osm2pgsql'
 # osm2pgsql --slim -d gis -C 3600 --hstore -S openstreetmap-carto-4.21.1/openstreetmap-carto.style $MapDataFileName
@@ -106,7 +104,7 @@ echo '* Install build dependency *'
 sudo apt-get install git autoconf libtool libmapnik-dev apache2-dev -y
 
 
-echo 'using user: '$(whoami)' home: '$(pwd)
+echo 'using user: '$(whoami)' current directory: '$(pwd)
 
 echo '* cloning mod_tile from GitHub *'
 git clone https://github.com/openstreetmap/mod_tile.git
@@ -117,15 +115,17 @@ cd mod_tile/
 echo '* Compile and install *'
 ./autogen.sh
 ./configure
-make
+sudo make
 sudo make install
 sudo make install-mod_tile
+cd ..
 
 # *** Step 6: Generate Mapnik Stylesheet ***
 echo '*** Step 6: Generate Mapnik Stylesheet ***'
+echo 'using user: '$(whoami)' current directory: '$(pwd)
 sudo apt-get install curl unzip gdal-bin mapnik-utils node-carto -y
 
-su - osm
+sudo su - $PostgreSQLUserName
 
 cd openstreetmap-carto-4.21.1/
 
@@ -138,7 +138,7 @@ carto project.mml > style.xml
 
 # *** Step 7: Configuring renderd ***
 echo '*** Step 7: Configuring renderd ***'
-
+echo 'using user: '$(whoami)' current directory: '$(pwd)
 echo '* replacing values in renderd.conf *'
 # In the [default] section, change the value of XML and HOST to
 # XML=/home/osm/openstreetmap-carto-2.41.0/style.xml
@@ -188,7 +188,7 @@ echo '*** Step 8: Configure Apache ***'
 sudo apt-get install apache2 -y
 
 # Create a module load file
-echo "LoadModule tile_module /usr/lib/apache2/modules/mod_tile.so" >> /etc/apache2/mods-available/mod_tile.load
+#echo "LoadModule tile_module /usr/lib/apache2/modules/mod_tile.so" >> /etc/apache2/mods-available/mod_tile.load
 
 # Create a symlink
 sudo ln -s /etc/apache2/mods-available/mod_tile.load /etc/apache2/mods-enabled/
