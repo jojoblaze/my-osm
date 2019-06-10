@@ -273,7 +273,7 @@
                         "autoUpgradeMinorVersion": true,
                         "settings": {
                             "fileUris": [
-                                "https://raw.githubusercontent.com/jojoblaze/my-osm/master/azure/install-osm.sh"
+                                "https://raw.githubusercontent.com/jojoblaze/my-osm/master/install-osm.sh"
                             ]
                         },
                         "protectedSettings": {

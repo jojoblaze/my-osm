@@ -206,7 +206,7 @@ sudo ln -s /etc/apache2/mods-available/mod_tile.load /etc/apache2/mods-enabled/
 # # Timeout before giving up for a tile to be rendered that is otherwise missing
 # ModTileMissingRequestTimeout 30
 
-wget https://raw.githubusercontent.com/jojoblaze/my-osm/master/azure/000-default.conf
+wget https://raw.githubusercontent.com/jojoblaze/my-osm/master/000-default.conf
 
 mv 000-default.conf /etc/apache2/sites-enabled/000-default.conf
 
