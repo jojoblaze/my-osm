@@ -91,7 +91,7 @@
         "subnetRef": "[resourceId('Microsoft.Network/virtualNetworks/subnets', variables('virtualNetworkName'), variables('subnetName'))]",
         "networkSecurityGroup": "mySecurityGroup",
         "osmUserName": "osm",
-        "osmRegion": "europe/italy"
+        "osmRegion": "europe/italy/north-west"
     },
     "functions": [],
     "resources": [

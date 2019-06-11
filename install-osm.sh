@@ -18,7 +18,13 @@ SouthAmericaMapFileName=south-america-latest.osm.pbf
 MapDataUriEurope=https://download.geofabrik.de/europe
 ItalyMapFileName=italy-latest.osm.pbf
 
-
+# *** Italy ***
+MapDataUriItaly=https://download.geofabrik.de/europe/italy/
+ItalyNorthWestMapFileName=nord-ovest-latest.osm.pbf
+ItalyNorthEastMapFileName=nord-est.html
+ItalyCenterMapFileName=centro-latest.osm.pbf
+ItalySouthMapFileName=sud-latest.osm.pbf
+ItalyIslandsMapFileName=isole-latest.osm.pbf
 
 case $OSMRegion in
     africa)
@@ -48,6 +54,26 @@ case $OSMRegion in
     europe/italy)
         MapDataFileName=$ItalyMapFileName
         MapDataUri=$MapDataUriEurope
+        ;;
+    europe/italy/north-west)
+        MapDataFileName=$ItalyNorthWestMapFileName
+        MapDataUri=$MapDataUriItaly
+        ;;
+    europe/italy/north-east)
+        MapDataFileName=$ItalyNorthEastMapFileName
+        MapDataUri=$MapDataUriItaly
+        ;;
+    europe/italy/center)
+        MapDataFileName=$ItalyCenterMapFileName
+        MapDataUri=$MapDataUriItaly
+        ;;
+    europe/italy/south)
+        MapDataFileName=$ItalySouthMapFileName
+        MapDataUri=$MapDataUriItaly
+        ;;
+    europe/italy/islands)
+        MapDataFileName=$ItalyIslandsMapFileName
+        MapDataUri=$MapDataUriItaly
         ;;
 	*)
 		echo "Unkown country or territory"
@@ -141,6 +167,15 @@ sudo apt-get install osm2pgsql -y
 # sudo su - $OSMUserName
 
 echo 'using user: '$(whoami)' current directory: '$(pwd)
+
+# changing authentication mode
+echo '* changing authentication mode *'
+sed -i "s/local   all             postgres                                peer/local   all             postgres                                trust/g" /etc/postgresql/10/main/pg_hba.conf
+
+# restarting postgres
+echo '* restarting postgres *'
+sudo service postgresql restart
+
 
 echo 'running osm2pgsql'
 # osm2pgsql --slim -d gis -C 3600 --hstore -S openstreetmap-carto-4.21.1/openstreetmap-carto.style $MapDataFileName
