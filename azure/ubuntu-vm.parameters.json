@@ -3,7 +3,7 @@
   "contentVersion": "1.0.0.0",
   "parameters": {
     "computerName": {
-      "value": "myUbuntuVM"
+      "value": "osm-tile-server-Ubuntu"
     },
     "adminUserName": {
       "value": "ubuntu"

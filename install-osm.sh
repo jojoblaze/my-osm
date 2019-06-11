@@ -99,11 +99,12 @@ echo "*** Step 1 - Prepare system ***"
 echo "* Setting Frontend as Non-Interactive *"
 export DEBIAN_FRONTEND=noninteractive
 
+sudo apt-get install libboost-all-dev git-core tar unzip wget bzip2 build-essential autoconf libtool libxml2-dev libgeos-dev libgeos++-dev libpq-dev libbz2-dev libproj-dev munin-node munin libprotobuf-c0-dev protobuf-c-compiler libfreetype6-dev libtiff5-dev libicu-dev libgdal-dev libcairo-dev libcairomm-1.0-dev apache2 apache2-dev libagg-dev liblua5.2-dev ttf-unifont lua5.1 liblua5.1-dev libgeotiff-epsg curl -y
 
 
 # *** Step 2 - Install PostgreSQL Database Server with PostGIS ***
 echo "*** Step 2 - Install PostgreSQL Database Server with PostGIS ***"
-sudo apt-get install postgresql postgresql-contrib postgis postgresql-10-postgis-2.4 -y
+sudo apt-get install postgresql postgresql-contrib postgis postgresql-10-postgis-2.4 postgresql-10-postgis-scripts -y
 
 # sudo -u postgres -i
 
@@ -117,6 +118,9 @@ sudo -u postgres psql -c "CREATE EXTENSION hstore;" -d gis
 
 sudo -u postgres psql -c "CREATE EXTENSION postgis;" -d gis
 
+sudo -u postgres psql -c "ALTER TABLE geometry_columns OWNER TO "$OSMUserName";" -d gis
+
+sudo -u postgres psql -c "ALTER TABLE geometry_columns OWNER TO "$OSMUserName";" -d gis
 
 # exit
 
@@ -133,15 +137,13 @@ OSMUserHome=/home/$OSMUserName/
 echo '*** Step 3: Download Map Stylesheet and Map Data ('$MapDataUri/$MapDataFileName')***'
 # sudo su - $OSMUserName
 
+cd $OSMUserHome
+
 wget https://github.com/gravitystorm/openstreetmap-carto/archive/v4.21.1.tar.gz
 
 tar xvf v4.21.1.tar.gz
 
-sudo mv openstreetmap-carto-4.21.1 $OSMUserHome
-
 wget -c $MapDataUri/$MapDataFileName
-
-sudo mv $MapDataFileName $OSMUserHome
 
 # exit
 
@@ -166,10 +168,8 @@ sudo apt-get install osm2pgsql -y
 
 # sudo su - $OSMUserName
 
-echo 'using user: '$(whoami)' current directory: '$(pwd)
-
 # changing authentication mode
-echo '* changing authentication mode *'
+echo '* changing postgres authentication mode *'
 sed -i "s/local   all             postgres                                peer/local   all             postgres                                trust/g" /etc/postgresql/10/main/pg_hba.conf
 
 # restarting postgres
@@ -193,13 +193,14 @@ echo '*** Step 5: Install mod_tile ***'
 
 # First install build dependency.
 echo '* Install build dependency *'
-sudo apt-get install git autoconf libtool libmapnik-dev apache2-dev -y
+sudo apt-get install git autoconf libtool apache2-dev libxml2-dev libbz2-dev libgeos-dev libgeos++-dev libproj-dev gdal-bin libmapnik-dev mapnik-utils python-mapnik -y
 
-
+cd $OSMUserHome
 echo 'using user: '$(whoami)' current directory: '$(pwd)
 
 echo '* cloning mod_tile from GitHub *'
-git clone https://github.com/openstreetmap/mod_tile.git
+# git clone https://github.com/openstreetmap/mod_tile.git
+git clone https://github.com/SomeoneElseOSM/mod_tile.git
 
 cd mod_tile/
 
@@ -212,7 +213,6 @@ sudo make install
 sudo make install-mod_tile
 
 sudo ldconfig
-cd ..
 
 
 
