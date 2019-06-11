@@ -1,8 +1,5 @@
 #!/bin/bash
 
-echo "###-- Setting Frontend as Non-Interactive"
-export DEBIAN_FRONTEND=noninteractive
-
 AfricaMapFileName=africa-latest.osm.pbf
 AntarcticaMapFileName=antarctica-latest.osm.pbf
 AsiaMapFileName=asia-latest.osm.pbf
@@ -14,14 +11,23 @@ SouthAmericaMapFileName=south-america-latest.osm.pbf
 
 MapDataFileName=$CentralAmericaMapFileName
 
-PostgreSQLUserName=$1
+OSMUserName=$1
+
+WORKING_DIR=$(pwd)
 
 
-# *** Step 1 - Update system ***
-#echo "*** Step 1 - Update system ***"
+echo 'using user: '$(whoami)' current directory: '$(WORKING_DIR)
+
+
+
+# *** Step 1 - Prepare system ***
+echo "*** Step 1 - Prepare system ***"
 #sudo apt-get update -y
 #sudo apt-get upgrade -y
-echo 'using user: '$(whoami)' current directory: '$(pwd)
+echo "* Setting Frontend as Non-Interactive *"
+export DEBIAN_FRONTEND=noninteractive
+
+
 
 # *** Step 2 - Install PostgreSQL Database Server with PostGIS ***
 echo "*** Step 2 - Install PostgreSQL Database Server with PostGIS ***"
@@ -30,10 +36,9 @@ sudo apt-get install postgresql postgresql-contrib postgis postgresql-10-postgis
 # sudo -u postgres -i
 
 # create a PostgreSQL database user osm
-sudo -u postgres createuser $PostgreSQLUserName
+sudo -u postgres createuser $OSMUserName
 
-#createdb -E UTF8 -O $PostgreSQLUserName gis
-sudo -u postgres createdb -E UTF8 -O $PostgreSQLUserName gis
+sudo -u postgres createdb -E UTF8 -O $OSMUserName gis
 
 # Create hstore and postgis extension on the gis database
 sudo -u postgres psql -c "CREATE EXTENSION hstore;" -d gis
@@ -44,21 +49,27 @@ sudo -u postgres psql -c "CREATE EXTENSION postgis;" -d gis
 # exit
 
 # Create osm user on your operating system so the tile server can run as osm user.
-echo '* creating operating system user ['$PostgreSQLUserName'] *'
-#sudo adduser $PostgreSQLUserName --disabled-password --shell /bin/bash --gecos ""
-sudo useradd -m $PostgreSQLUserName
+echo '* creating operating system user ['$OSMUserName'] *'
+#sudo adduser $OSMUserName --disabled-password --shell /bin/bash --gecos ""
+sudo useradd -m $OSMUserName
+
+OSMUserHome=/home/$OSMUserName/
+
+
 
 # *** Step 3: Download Map Stylesheet and Map Data ***
 echo '*** Step 3: Download Map Stylesheet and Map Data ('$MapDataFileName')***'
-sudo su - $PostgreSQLUserName
+# sudo su - $OSMUserName
 
 wget https://github.com/gravitystorm/openstreetmap-carto/archive/v4.21.1.tar.gz
 
-
 tar xvf v4.21.1.tar.gz
 
+sudo mv -r openstreetmap-carto-4.21.1 $OSMUserHome
 
 wget -c http://download.geofabrik.de/$MapDataFileName
+
+sudo mv $MapDataFileName $OSMUserHome
 
 # exit
 
@@ -81,13 +92,13 @@ wget -c http://download.geofabrik.de/$MapDataFileName
 echo '*** Step 4: Import the Map Data to PostgreSQL ***'
 sudo apt-get install osm2pgsql -y
 
-sudo su - $PostgreSQLUserName
+# sudo su - $OSMUserName
 
 echo 'using user: '$(whoami)' current directory: '$(pwd)
 
 echo 'running osm2pgsql'
 # osm2pgsql --slim -d gis -C 3600 --hstore -S openstreetmap-carto-4.21.1/openstreetmap-carto.style $MapDataFileName
-osm2pgsql --slim -d gis -C 1800 --hstore -S openstreetmap-carto-4.21.1/openstreetmap-carto.style $MapDataFileName
+osm2pgsql -U postgres --slim -d gis -C 1800 --hstore -S $OSMUserHome/openstreetmap-carto-4.21.1/openstreetmap-carto.style $OSMUserHome/$MapDataFileName
 
 # osm2gpsql will run in slim mode which is recommended over the normal mode. -d stands for --database. -C flag specify the cache size in MB. Bigger cache size results in faster import speed but you need to have enough RAM to use cache. -S flag specify the style file. And finally you need to specify the map data file.
 
@@ -120,18 +131,32 @@ sudo make install
 sudo make install-mod_tile
 cd ..
 
+
+
 # *** Step 6: Generate Mapnik Stylesheet ***
 echo '*** Step 6: Generate Mapnik Stylesheet ***'
 echo 'using user: '$(whoami)' current directory: '$(pwd)
 sudo apt-get install curl unzip gdal-bin mapnik-utils node-carto -y
 
-sudo su - $PostgreSQLUserName
+sudo apt-get install npm nodejs -y
+
+sudo npm install -g carto
+
+sudo su - $OSMUserName
+
+
+cd $OSMUserHome
+
+sudo chown -R $OSMUserName:$OSMUserName openstreetmap-carto-4.21.1/
 
 cd openstreetmap-carto-4.21.1/
 
-./get-shapefiles.sh
+# ./get-shapefiles.sh
+ ./scripts/get-shapefiles.py
 
 carto project.mml > style.xml
+
+cd ..
 
 # exit
 
@@ -151,6 +176,11 @@ sed -i "s/HOST=tile.openstreetmap.org/HOST=localhost/g" /usr/local/etc/renderd.c
 # In [mapnik] section, change the value of plugins_dir
 sed -i "s/plugins_dir=\/usr\/lib\/mapnik\/input/plugins_dir=\/usr\/lib\/mapnik\/3.0\/input/g" /usr/local/etc/renderd.conf
 
+echo '* installing required fonts *'
+sudo apt-get install fonts-noto-cjk fonts-noto-hinted fonts-noto-unhinted fonts-hanazono ttf-unifont -y
+
+
+cd $WORKING_DIR
 
 # Install renderd init script by copying the sample init script.
 echo '* Install renderd init script by copying the sample init script *'
@@ -170,7 +200,7 @@ sed -i "s/RUNASUSER=www-data/RUNASUSER=osm/g" /etc/init.d/renderd
 sudo mkdir -p /var/lib/mod_tile
 
 # sudo chown osm:osm /var/lib/mod_tile
-sudo chown $PostgreSQLUserName:$PostgreSQLUserName /var/lib/mod_tile
+sudo chown $OSMUserName:$OSMUserName /var/lib/mod_tile
 
 
 # start renderd service
@@ -188,7 +218,8 @@ echo '*** Step 8: Configure Apache ***'
 sudo apt-get install apache2 -y
 
 # Create a module load file
-#echo "LoadModule tile_module /usr/lib/apache2/modules/mod_tile.so" >> /etc/apache2/mods-available/mod_tile.load
+echo "LoadModule tile_module /usr/lib/apache2/modules/mod_tile.so" | sudo tee /etc/apache2/mods-available/mod_tile.load
+
 
 # Create a symlink
 sudo ln -s /etc/apache2/mods-available/mod_tile.load /etc/apache2/mods-enabled/
