@@ -90,7 +90,8 @@
         },
         "subnetRef": "[resourceId('Microsoft.Network/virtualNetworks/subnets', variables('virtualNetworkName'), variables('subnetName'))]",
         "networkSecurityGroup": "mySecurityGroup",
-        "osmUserName": "osm"
+        "osmUserName": "osm",
+        "osmRegion": "europe/italy"
     },
     "functions": [],
     "resources": [
@@ -277,14 +278,12 @@
                             ]
                         },
                         "protectedSettings": {
-                            "commandToExecute": "[concat('sudo sh install-osm.sh ',variables('osmUserName'), ' ')]"
+                            "commandToExecute": "[concat('sudo sh install-osm.sh ',variables('osmUserName'), ' ',variables('osmRegion'), ' ')]"
                         }
                     }
                 }
             ]
         }
     ],
-    "outputs": {
-
-    }
+    "outputs": {}
 }

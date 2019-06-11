@@ -1,4 +1,9 @@
 #!/bin/bash
+OSMUserName=$1
+OSMRegion=$2
+
+
+MapDataUri=http://download.geofabrik.de
 
 AfricaMapFileName=africa-latest.osm.pbf
 AntarcticaMapFileName=antarctica-latest.osm.pbf
@@ -9,9 +14,50 @@ CentralAmericaMapFileName=central-america-latest.osm.pbf
 NorthAmericaMapFileName=north-america-latest.osm.pbf
 SouthAmericaMapFileName=south-america-latest.osm.pbf
 
-MapDataFileName=$CentralAmericaMapFileName
+# *** Europe ***
+MapDataUriEurope=https://download.geofabrik.de/europe
+ItalyMapFileName=italy-latest.osm.pbf
 
-OSMUserName=$1
+
+
+case $OSMRegion in
+    africa)
+        MapDataFileName=$AfricaMapFileName
+        ;;
+    antarctica)
+        MapDataFileName=$AntarcticaMapFileName
+        ;;
+    asia)
+        MapDataFileName=$AsiaMapFileName
+        ;;
+    australia-oceania)
+        MapDataFileName=$AustraliaMapFileName
+        ;;
+    north-america)
+        MapDataFileName=$NorthAmericaMapFileName
+        ;;
+    central-america)
+        MapDataFileName=$CentralAmericaMapFileName
+        ;;
+    south-america)
+        MapDataFileName=$SouthAmericaMapFileName
+        ;;
+    europe)
+        MapDataFileName=$EuropeMapFileName
+        ;;
+    europe/italy)
+        MapDataFileName=$ItalyMapFileName
+        MapDataUri=$MapDataUriEurope
+        ;;
+	*)
+		echo "Unkown country or territory"
+        exit
+		;;
+esac
+
+# MapDataFileName=$CentralAmericaMapFileName
+
+
 
 WORKING_DIR=$(pwd)
 
@@ -58,16 +104,16 @@ OSMUserHome=/home/$OSMUserName/
 
 
 # *** Step 3: Download Map Stylesheet and Map Data ***
-echo '*** Step 3: Download Map Stylesheet and Map Data ('$MapDataFileName')***'
+echo '*** Step 3: Download Map Stylesheet and Map Data ('$MapDataUri/$MapDataFileName')***'
 # sudo su - $OSMUserName
 
 wget https://github.com/gravitystorm/openstreetmap-carto/archive/v4.21.1.tar.gz
 
 tar xvf v4.21.1.tar.gz
 
-sudo mv -r openstreetmap-carto-4.21.1 $OSMUserHome
+sudo mv openstreetmap-carto-4.21.1 $OSMUserHome
 
-wget -c http://download.geofabrik.de/$MapDataFileName
+wget -c $MapDataUri/$MapDataFileName
 
 sudo mv $MapDataFileName $OSMUserHome
 
@@ -129,6 +175,8 @@ echo '* Compile and install *'
 sudo make
 sudo make install
 sudo make install-mod_tile
+
+sudo ldconfig
 cd ..
 
 
@@ -152,7 +200,7 @@ sudo chown -R $OSMUserName:$OSMUserName openstreetmap-carto-4.21.1/
 cd openstreetmap-carto-4.21.1/
 
 # ./get-shapefiles.sh
- ./scripts/get-shapefiles.py
+./scripts/get-shapefiles.py
 
 carto project.mml > style.xml
 
