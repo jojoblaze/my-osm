@@ -92,18 +92,29 @@ echo 'using user: '$(whoami)' current directory: '$(WORKING_DIR)
 
 
 
-# *** Step 1 - Prepare system ***
-echo "*** Step 1 - Prepare system ***"
+# *** Step 0 - Prepare system ***
+echo '*******************************'
+echo '*** Step 0 - Prepare system ***'
+echo '*******************************'
 #sudo apt-get update -y
 #sudo apt-get upgrade -y
-echo "* Setting Frontend as Non-Interactive *"
+echo '* Setting Frontend as Non-Interactive *'
 export DEBIAN_FRONTEND=noninteractive
 
-sudo apt-get install -y curl unzip libboost-all-dev git-core git tar wget bzip2 build-essential autoconf libtool libxml2-dev libgeos-dev libgeos++-dev libpq-dev libbz2-dev libproj-dev munin-node munin libprotobuf-c0-dev protobuf-c-compiler libfreetype6-dev libtiff5-dev libicu-dev libgdal-dev libcairo-dev libcairomm-1.0-dev apache2 apache2-dev libagg-dev liblua5.2-dev ttf-unifont lua5.1 liblua5.1-dev libgeotiff-epsgy
+
+
+# *** Step 1 - Install dependencies ***
+echo '*************************************'
+echo '*** Step 1 - Install dependencies ***'
+echo '*************************************'
+sudo apt-get install -y autoconf autogen automake apache2 apache2-dev build-essential bzip2 curl git-core git libboost-all-dev libtool libxml2-dev libgeos-dev libgeos++-dev libpq-dev libbz2-dev libproj-dev libprotobuf-c0-dev libfreetype6-dev libtiff5-dev libicu-dev libgdal-dev libcairo-dev libcairomm-1.0-dev libagg-dev lua5.1 liblua5.1-dev liblua5.2-dev libgeotiff-epsg munin-node munin pkg-config protobuf-c-compiler tar ttf-unifont unzip wget 
+
 
 
 # *** Step 2 - Install PostgreSQL Database Server with PostGIS ***
-echo "*** Step 2 - Install PostgreSQL Database Server with PostGIS ***"
+echo '****************************************************************'
+echo '*** Step 2 - Install PostgreSQL Database Server with PostGIS ***'
+echo '****************************************************************'
 sudo apt-get install -y postgresql postgresql-contrib postgis postgresql-10-postgis-2.4 postgresql-10-postgis-scripts
 
 # sudo -u postgres -i
@@ -134,7 +145,11 @@ OSMUserHome=/home/$OSMUserName/
 
 
 # *** Step 3: Download Map Stylesheet and Map Data ***
-echo '*** Step 3: Download Map Stylesheet and Map Data ('$MapDataUri/$MapDataFileName')***'
+echo '****************************************************'
+echo '*** Step 3: Download Map Stylesheet and Map Data ***'
+echo '****************************************************'
+
+echo '(downloading from '$MapDataUri/$MapDataFileName')'
 # sudo su - $OSMUserName
 
 cd $OSMUserHome
@@ -142,6 +157,8 @@ cd $OSMUserHome
 wget https://github.com/gravitystorm/openstreetmap-carto/archive/v4.21.1.tar.gz
 
 tar xvf v4.21.1.tar.gz
+
+rm v4.21.1.tar.gz
 
 wget -c $MapDataUri/$MapDataFileName
 
@@ -163,9 +180,14 @@ wget -c $MapDataUri/$MapDataFileName
 
 
 # *** Step 4: Import the Map Data to PostgreSQL ***
+echo '*************************************************'
 echo '*** Step 4: Import the Map Data to PostgreSQL ***'
-sudo apt-get install osm2pgsql -y
+echo '*************************************************'
 
+sudo apt-get install -y osm2pgsql
+
+cd $OSMUserHome
+echo 'using user: '$(whoami)' current directory: '$(pwd)
 # sudo su - $OSMUserName
 
 # changing authentication mode
@@ -177,7 +199,7 @@ echo '* restarting postgres *'
 sudo service postgresql restart
 
 
-echo 'running osm2pgsql'
+echo '* running osm2pgsql *'
 # osm2pgsql --slim -d gis -C 3600 --hstore -S openstreetmap-carto-4.21.1/openstreetmap-carto.style $MapDataFileName
 osm2pgsql -U postgres --slim -d gis -C 1800 --hstore -S $OSMUserHome/openstreetmap-carto-4.21.1/openstreetmap-carto.style $OSMUserHome/$MapDataFileName
 
@@ -188,12 +210,10 @@ osm2pgsql -U postgres --slim -d gis -C 1800 --hstore -S $OSMUserHome/openstreetm
 
 
 # *** Step 5: Install mod_tile ***
+echo '********************************'
 echo '*** Step 5: Install mod_tile ***'
+echo '********************************'
 # mod_tile is an Apache module that is required to serve tiles. Currently no binary package is available for Ubuntu. We can compile it from Github repository.
-
-# First install build dependency.
-echo '* Install build dependency *'
-sudo apt-get install gdal-bin -y
 
 cd $OSMUserHome
 echo 'using user: '$(whoami)' current directory: '$(pwd)
@@ -206,8 +226,8 @@ cd mod_tile/
 
 # Compile and install
 echo '* Compile and install *'
-./autogen.sh
-./configure
+sudo ./autogen.sh
+sudo ./configure
 sudo make
 sudo make install
 sudo make install-mod_tile
@@ -217,16 +237,19 @@ sudo ldconfig
 
 
 # *** Step 6: Generate Mapnik Stylesheet ***
+echo '******************************************'
 echo '*** Step 6: Generate Mapnik Stylesheet ***'
+echo '******************************************'
 echo 'using user: '$(whoami)' current directory: '$(pwd)
 sudo apt-get install gdal-bin libmapnik-dev mapnik-utils python-mapnik node-carto -y
 
 sudo apt-get install npm nodejs -y
 
 # * check mapnik version *
-if [ $(mapnik-config -v) != "3.0.19" ]
+MAPNIK_EXPECTED_VERSION="3.0.19"
+if [ $(mapnik-config -v) != $MAPNIK_EXPECTED_VERSION ]
 then
-    echo 'ASSERT FAILED: expected a different version of mapnik'
+    echo 'ASSERT FAILED: expected mapnik version '$MAPNIK_EXPECTED_VERSION >>/dev/stderr
 fi
 
 sudo npm install -g carto
@@ -250,19 +273,25 @@ cd ..
 # exit
 
 
+
 # *** Step 7: Configuring renderd ***
+echo '***********************************'
 echo '*** Step 7: Configuring renderd ***'
+echo '***********************************'
 echo 'using user: '$(whoami)' current directory: '$(pwd)
 
 echo '* replacing values in renderd.conf *'
+# RENDERD_CONF_PATH='/usr/local/etc/renderd.conf'
+RENDERD_CONF_PATH='/home/osm/mod_tile/debian/renderd.conf'
+
 # In the [default] section, change the value of XML and HOST to
 # XML=/home/osm/openstreetmap-carto-2.41.0/style.xml
 # HOST=localhost
-sed -i "s/XML=\/home\/jburgess\/osm\/svn.openstreetmap.org\/applications\/rendering\/mapnik\/osm-local.xml/XML=\/home\/osm\/openstreetmap-carto-4.21.1\/style.xml/g" /usr/local/etc/renderd.conf
-sed -i "s/HOST=tile.openstreetmap.org/HOST=$HOSTNAME/g" /usr/local/etc/renderd.conf
+sudo sed -i "s/^XML=\/home\/jburgess\/osm\/svn.openstreetmap.org\/applications\/rendering\/mapnik\/osm-local.xml/XML=\/home\/osm\/openstreetmap-carto-4.21.1\/style.xml/g" $RENDERD_CONF_PATH
+sudo sed -i "s/^HOST=tile.openstreetmap.org/HOST=$HOSTNAME/g" $RENDERD_CONF_PATH
 
 # In [mapnik] section, change the value of plugins_dir
-sed -i "s/plugins_dir=\/usr\/lib\/mapnik\/input/plugins_dir=\/usr\/lib\/mapnik\/3.0\/input/g" /usr/local/etc/renderd.conf
+sudo sed -i "s/^plugins_dir=\/usr\/lib\/mapnik\/input/plugins_dir=\/usr\/lib\/mapnik\/3.0\/input/g" $RENDERD_CONF_PATH
 
 echo '* installing required fonts *'
 sudo apt-get install -y fonts-noto-cjk fonts-noto-hinted fonts-noto-unhinted fonts-hanazono ttf-unifont
@@ -281,7 +310,8 @@ sudo chmod a+x /etc/init.d/renderd
 echo '* replacing values in init.d/renderd *'
 # Change the following variable in /etc/init.d/renderd file
 sudo sed -i "s/DAEMON=\/usr\/bin\/\$NAME/DAEMON=\/usr\/local\/bin\/\$NAME/g" /etc/init.d/renderd
-sudo sed -i "s/DAEMON_ARGS=\"\"/DAEMON_ARGS=\"-c \/usr\/local\/etc\/renderd.conf\"/g" /etc/init.d/renderd
+# sudo sed -i "s/DAEMON_ARGS=\"\"/DAEMON_ARGS=\"-c \/usr\/local\/etc\/renderd.conf\"/g" /etc/init.d/renderd
+sudo sed -i "s/DAEMON_ARGS=\"\"/DAEMON_ARGS=\"-c \/home\/osm\/mod_tile\/debian\/renderd.conf\"/g" /etc/init.d/renderd
 sudo sed -i "s/RUNASUSER=www-data/RUNASUSER=$OSMUserName/g" /etc/init.d/renderd
 
 
@@ -302,7 +332,9 @@ sudo systemctl enable renderd
 
 
 # *** Step 8: Configure Apache ***
+echo '********************************'
 echo '*** Step 8: Configure Apache ***'
+echo '********************************'
 sudo apt-get install apache2 -y
 
 # Create a module load file
