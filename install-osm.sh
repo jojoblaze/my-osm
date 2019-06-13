@@ -99,12 +99,12 @@ echo "*** Step 1 - Prepare system ***"
 echo "* Setting Frontend as Non-Interactive *"
 export DEBIAN_FRONTEND=noninteractive
 
-sudo apt-get install libboost-all-dev git-core tar unzip wget bzip2 build-essential autoconf libtool libxml2-dev libgeos-dev libgeos++-dev libpq-dev libbz2-dev libproj-dev munin-node munin libprotobuf-c0-dev protobuf-c-compiler libfreetype6-dev libtiff5-dev libicu-dev libgdal-dev libcairo-dev libcairomm-1.0-dev apache2 apache2-dev libagg-dev liblua5.2-dev ttf-unifont lua5.1 liblua5.1-dev libgeotiff-epsg curl -y
+sudo apt-get install -y curl unzip libboost-all-dev git-core git tar wget bzip2 build-essential autoconf libtool libxml2-dev libgeos-dev libgeos++-dev libpq-dev libbz2-dev libproj-dev munin-node munin libprotobuf-c0-dev protobuf-c-compiler libfreetype6-dev libtiff5-dev libicu-dev libgdal-dev libcairo-dev libcairomm-1.0-dev apache2 apache2-dev libagg-dev liblua5.2-dev ttf-unifont lua5.1 liblua5.1-dev libgeotiff-epsgy
 
 
 # *** Step 2 - Install PostgreSQL Database Server with PostGIS ***
 echo "*** Step 2 - Install PostgreSQL Database Server with PostGIS ***"
-sudo apt-get install postgresql postgresql-contrib postgis postgresql-10-postgis-2.4 postgresql-10-postgis-scripts -y
+sudo apt-get install -y postgresql postgresql-contrib postgis postgresql-10-postgis-2.4 postgresql-10-postgis-scripts
 
 # sudo -u postgres -i
 
@@ -116,11 +116,11 @@ sudo -u postgres createdb -E UTF8 -O $OSMUserName gis
 # Create hstore and postgis extension on the gis database
 sudo -u postgres psql -c "CREATE EXTENSION hstore;" -d gis
 
-sudo -u postgres psql -c "CREATE EXTENSION postgis;" -d gis
+sudo -u postgres psql -c "CREATE EXTENSION postgis; ALTER TABLE geometry_columns OWNER TO $OSMUserName; ALTER TABLE geometry_columns OWNER TO $OSMUserName;" -d gis
 
-sudo -u postgres psql -c "ALTER TABLE geometry_columns OWNER TO "$OSMUserName";" -d gis
+# sudo -u postgres psql -c "ALTER TABLE geometry_columns OWNER TO $OSMUserName;" -d gis
 
-sudo -u postgres psql -c "ALTER TABLE geometry_columns OWNER TO "$OSMUserName";" -d gis
+# sudo -u postgres psql -c "ALTER TABLE geometry_columns OWNER TO $OSMUserName;" -d gis
 
 # exit
 
@@ -193,7 +193,7 @@ echo '*** Step 5: Install mod_tile ***'
 
 # First install build dependency.
 echo '* Install build dependency *'
-sudo apt-get install git autoconf libtool apache2-dev libxml2-dev libbz2-dev libgeos-dev libgeos++-dev libproj-dev gdal-bin libmapnik-dev mapnik-utils python-mapnik -y
+sudo apt-get install gdal-bin -y
 
 cd $OSMUserHome
 echo 'using user: '$(whoami)' current directory: '$(pwd)
@@ -219,9 +219,15 @@ sudo ldconfig
 # *** Step 6: Generate Mapnik Stylesheet ***
 echo '*** Step 6: Generate Mapnik Stylesheet ***'
 echo 'using user: '$(whoami)' current directory: '$(pwd)
-sudo apt-get install curl unzip gdal-bin mapnik-utils node-carto -y
+sudo apt-get install gdal-bin libmapnik-dev mapnik-utils python-mapnik node-carto -y
 
 sudo apt-get install npm nodejs -y
+
+# * check mapnik version *
+if [ $(mapnik-config -v) != "3.0.19" ]
+then
+    echo 'ASSERT FAILED: expected a different version of mapnik'
+fi
 
 sudo npm install -g carto
 
@@ -247,20 +253,19 @@ cd ..
 # *** Step 7: Configuring renderd ***
 echo '*** Step 7: Configuring renderd ***'
 echo 'using user: '$(whoami)' current directory: '$(pwd)
+
 echo '* replacing values in renderd.conf *'
 # In the [default] section, change the value of XML and HOST to
 # XML=/home/osm/openstreetmap-carto-2.41.0/style.xml
 # HOST=localhost
-# sed -i "s/XML=\/home\/osm\/openstreetmap-carto-4.21.1\/style.xml/XML=\/home\/osm\/openstreetmap-carto-4.21.1\/style.xml/g" /usr/local/etc/renderd.conf
 sed -i "s/XML=\/home\/jburgess\/osm\/svn.openstreetmap.org\/applications\/rendering\/mapnik\/osm-local.xml/XML=\/home\/osm\/openstreetmap-carto-4.21.1\/style.xml/g" /usr/local/etc/renderd.conf
-
-sed -i "s/HOST=tile.openstreetmap.org/HOST=localhost/g" /usr/local/etc/renderd.conf
+sed -i "s/HOST=tile.openstreetmap.org/HOST=$HOSTNAME/g" /usr/local/etc/renderd.conf
 
 # In [mapnik] section, change the value of plugins_dir
 sed -i "s/plugins_dir=\/usr\/lib\/mapnik\/input/plugins_dir=\/usr\/lib\/mapnik\/3.0\/input/g" /usr/local/etc/renderd.conf
 
 echo '* installing required fonts *'
-sudo apt-get install fonts-noto-cjk fonts-noto-hinted fonts-noto-unhinted fonts-hanazono ttf-unifont -y
+sudo apt-get install -y fonts-noto-cjk fonts-noto-hinted fonts-noto-unhinted fonts-hanazono ttf-unifont
 
 
 cd $WORKING_DIR
@@ -275,9 +280,9 @@ sudo chmod a+x /etc/init.d/renderd
 
 echo '* replacing values in init.d/renderd *'
 # Change the following variable in /etc/init.d/renderd file
-sed -i "s/DAEMON=\/usr\/bin\/\$NAME/DAEMON=\/usr\/local\/bin\/\$NAME/g" /etc/init.d/renderd
-sed -i "s/DAEMON_ARGS=\"\"/DAEMON_ARGS=\"-c \/usr\/local\/etc\/renderd.conf\"/g" /etc/init.d/renderd
-sed -i "s/RUNASUSER=www-data/RUNASUSER=osm/g" /etc/init.d/renderd
+sudo sed -i "s/DAEMON=\/usr\/bin\/\$NAME/DAEMON=\/usr\/local\/bin\/\$NAME/g" /etc/init.d/renderd
+sudo sed -i "s/DAEMON_ARGS=\"\"/DAEMON_ARGS=\"-c \/usr\/local\/etc\/renderd.conf\"/g" /etc/init.d/renderd
+sudo sed -i "s/RUNASUSER=www-data/RUNASUSER=$OSMUserName/g" /etc/init.d/renderd
 
 
 sudo mkdir -p /var/lib/mod_tile
@@ -308,29 +313,20 @@ echo "LoadModule tile_module /usr/lib/apache2/modules/mod_tile.so" | sudo tee /e
 sudo ln -s /etc/apache2/mods-available/mod_tile.load /etc/apache2/mods-enabled/
 
 
-# Then edit the default virtual host file.
-
-# sudo nano /etc/apache2/sites-enabled/000-default.conf
-# Paste the following lines in <VirtualHost *:80>
-
-# LoadTileConfigFile /usr/local/etc/renderd.conf
-# ModTileRenderdSocketName /var/run/renderd/renderd.sock
-# # Timeout before giving up for a tile to be rendered
-# ModTileRequestTimeout 0
-# # Timeout before giving up for a tile to be rendered that is otherwise missing
-# ModTileMissingRequestTimeout 30
-
+# Replace default virtual host file
 wget https://raw.githubusercontent.com/jojoblaze/my-osm/master/000-default.conf
 
 mv 000-default.conf /etc/apache2/sites-enabled/000-default.conf
 
 # Save and close the file. Restart Apache.
-echo '* Save and close the file. Restart Apache. *'
+echo '* Restart Apache. *'
 sudo systemctl restart apache2
 
 
+# Copy map file
+cd /var/www/html/
+wget https://raw.githubusercontent.com/jojoblaze/my-osm/master/map.html
 
-# Then in your web browser address bar, type
+echo 'Then in your web browser address bar, type: your-server-ip/osm_tiles/0/0/0.png'
 
-# your-server-ip/osm_tiles/0/0/0.png
-# You should see the tile of world map. Congrats! You just successfully built your own OSM tile server.
+echo 'Congrats! You just successfully built your own OSM tile server.'
