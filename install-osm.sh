@@ -180,7 +180,15 @@ fi
 echo 'Creating postgis extension on gis database'
 postgis_command="CREATE EXTENSION postgis; ALTER TABLE geometry_columns OWNER TO $OSMUserName; ALTER TABLE geometry_columns OWNER TO $OSMUserName;"
 echo 'PostgreSQL - Executing command:'$postgis_command
-sudo -u postgres psql -c $postgis_command -d gis || echo "Unable to create postgis extension" && exit
+sudo -u postgres psql -c $postgis_command -d gis
+
+if [[ $? > 0 ]]
+then
+    echo "The command failed, exiting."
+    exit
+else
+    echo "The command ran succesfuly, continuing with script."
+fi
 
 # sudo -u postgres psql -c "ALTER TABLE geometry_columns OWNER TO $OSMUserName;" -d gis
 
@@ -191,7 +199,15 @@ sudo -u postgres psql -c $postgis_command -d gis || echo "Unable to create postg
 # Create osm user on your operating system so the tile server can run as osm user.
 echo '* creating operating system user ['$OSMUserName'] *'
 #sudo adduser $OSMUserName --disabled-password --shell /bin/bash --gecos ""
-sudo useradd -m $OSMUserName || echo "Unable to create $OSMUserName user" && exit
+sudo useradd -m $OSMUserName
+
+if [[ $? > 0 ]]
+then
+    echo "The command failed, exiting."
+    exit
+else
+    echo "The command ran succesfuly, continuing with script."
+fi
 
 OSMUserHome=/home/$OSMUserName/
 
