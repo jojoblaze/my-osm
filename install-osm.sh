@@ -139,13 +139,45 @@ fi
 
 # create a PostgreSQL database user osm
 echo 'Creating PostgreSQL database user ['$OSMUserName']'
-sudo -u postgres createuser $OSMUserName || echo "Unable to create PostgreSQL user $OSMUserName" && exit
+sudo -u postgres createuser $OSMUserName
 
-sudo -u postgres createdb -E UTF8 -O $OSMUserName gis || echo "Unable to create gis database" && exit
+if [[ $? > 0 ]]
+then
+    echo "The command failed, exiting."
+    exit
+else
+    echo "The command ran succesfuly, continuing with script."
+fi
 
-# Create hstore and postgis extension on the gis database
-sudo -u postgres psql -c "CREATE EXTENSION hstore;" -d gis || echo "Unable to create hstore extension" && exit
 
+
+echo 'Creating PostgreSQL gis database'
+sudo -u postgres createdb -E UTF8 -O $OSMUserName gis
+
+if [[ $? > 0 ]]
+then
+    echo "The command failed, exiting."
+    exit
+else
+    echo "The command ran succesfuly, continuing with script."
+fi
+
+
+
+echo 'Creating hstore extension on the gis database'
+sudo -u postgres psql -c "CREATE EXTENSION hstore;" -d gis
+
+if [[ $? > 0 ]]
+then
+    echo "The command failed, exiting."
+    exit
+else
+    echo "The command ran succesfuly, continuing with script."
+fi
+
+
+
+echo 'Creating postgis extension on gis database'
 postgis_command="CREATE EXTENSION postgis; ALTER TABLE geometry_columns OWNER TO $OSMUserName; ALTER TABLE geometry_columns OWNER TO $OSMUserName;"
 echo 'PostgreSQL - Executing command:'$postgis_command
 sudo -u postgres psql -c $postgis_command -d gis || echo "Unable to create postgis extension" && exit
