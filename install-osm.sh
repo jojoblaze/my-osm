@@ -76,19 +76,16 @@ case $OSMRegion in
         MapDataUri=$MapDataUriItaly
         ;;
 	*)
-		echo "Unkown country or territory"
+		echo "@@@ Unkown country or territory @@@"
         exit
 		;;
 esac
-
-# MapDataFileName=$CentralAmericaMapFileName
-
 
 
 WORKING_DIR=$(pwd)
 
 
-echo 'using user: '$(whoami)' current directory: '$(WORKING_DIR)
+echo '@@@ using user: '$(whoami)' current directory: '$(WORKING_DIR)
 
 
 
@@ -107,7 +104,7 @@ export DEBIAN_FRONTEND=noninteractive
 echo '*************************************'
 echo '*** Step 1 - Install dependencies ***'
 echo '*************************************'
-sudo apt-get install -y autoconf autogen automake apache2 apache2-dev build-essential bzip2 curl git-core git libboost-all-dev libtool libxml2-dev libgeos-dev libgeos++-dev libpq-dev libbz2-dev libproj-dev libprotobuf-c0-dev libfreetype6-dev libtiff5-dev libicu-dev libgdal-dev libcairo-dev libcairomm-1.0-dev libagg-dev lua5.1 liblua5.1-dev liblua5.2-dev libgeotiff-epsg munin-node munin pkg-config protobuf-c-compiler tar ttf-unifont unzip wget 
+sudo apt-get install -y libboost-all-dev git-core tar unzip wget bzip2 build-essential autoconf libtool libxml2-dev libgeos-dev libgeos++-dev libpq-dev libbz2-dev libproj-dev munin-node munin libprotobuf-c0-dev protobuf-c-compiler libfreetype6-dev libtiff5-dev libicu-dev libgdal-dev libcairo-dev libcairomm-1.0-dev apache2 apache2-dev libagg-dev liblua5.2-dev ttf-unifont lua5.1 liblua5.1-dev libgeotiff-epsg curl
 
 if [[ $? > 0 ]]
 then
@@ -178,9 +175,9 @@ fi
 
 
 echo 'Creating postgis extension on gis database'
-postgis_command="CREATE EXTENSION postgis; ALTER TABLE geometry_columns OWNER TO $OSMUserName; ALTER TABLE geometry_columns OWNER TO $OSMUserName;"
+command="CREATE EXTENSION postgis;"
 echo 'PostgreSQL - Executing command:'$postgis_command
-sudo -u postgres psql -c $postgis_command -d gis
+sudo -u postgres psql -c $command -d gis
 
 if [[ $? > 0 ]]
 then
@@ -190,16 +187,9 @@ else
     echo "The command ran succesfuly, continuing with script."
 fi
 
-# sudo -u postgres psql -c "ALTER TABLE geometry_columns OWNER TO $OSMUserName;" -d gis
-
-# sudo -u postgres psql -c "ALTER TABLE geometry_columns OWNER TO $OSMUserName;" -d gis
-
-# exit
-
-# Create osm user on your operating system so the tile server can run as osm user.
-echo '* creating operating system user ['$OSMUserName'] *'
-#sudo adduser $OSMUserName --disabled-password --shell /bin/bash --gecos ""
-sudo useradd -m $OSMUserName
+command="ALTER TABLE geometry_columns OWNER TO $OSMUserName;"
+echo 'PostgreSQL - Executing command:'$command
+sudo -u postgres psql -c $command -d gis
 
 if [[ $? > 0 ]]
 then
@@ -209,52 +199,9 @@ else
     echo "The command ran succesfuly, continuing with script."
 fi
 
-OSMUserHome=/home/$OSMUserName/
-
-
-
-# *** Step 3: Download Map Stylesheet and Map Data ***
-echo '****************************************************'
-echo '*** Step 3: Download Map Stylesheet and Map Data ***'
-echo '****************************************************'
-
-echo '(downloading from '$MapDataUri/$MapDataFileName')'
-# sudo su - $OSMUserName
-
-cd $OSMUserHome
-
-wget https://github.com/gravitystorm/openstreetmap-carto/archive/v4.21.1.tar.gz
-
-tar xvf v4.21.1.tar.gz
-
-rm v4.21.1.tar.gz
-
-wget -c $MapDataUri/$MapDataFileName
-
-# exit
-
-
-# Recommendations before Importing Map Data
-# sudo fallocate -l 2G /swapfile
-# sudo chmod 600 /swapfile
-# sudo mkswap /swapfile
-# sudo swapon /swapfile
-
-# The import process can take some time. It’s recommended to configure SSH keepalive so that you don’t lose the SSH connection. It’s very easy to do. Just open the SSH client configuration file on your local Linux machine.
-# sudo nano /etc/ssh/ssh_config
-
-# And paste the following text at the end of the file.
-# ServerAliveInterval 60
-
-
-
-# *** Step 4: Import the Map Data to PostgreSQL ***
-echo '*************************************************'
-echo '*** Step 4: Import the Map Data to PostgreSQL ***'
-echo '*************************************************'
-
-echo 'Installing osm2pgsql...'
-sudo apt-get install -y osm2pgsql
+command="ALTER TABLE geometry_columns OWNER TO $OSMUserName;"
+echo 'PostgreSQL - Executing command:'$command
+sudo -u postgres psql -c $command -d gis
 
 if [[ $? > 0 ]]
 then
@@ -264,14 +211,8 @@ else
     echo "The command ran succesfuly, continuing with script."
 fi
 
-
-
-cd $OSMUserHome
-echo 'using user: '$(whoami)' current directory: '$(pwd)
-# sudo su - $OSMUserName
-
-# changing authentication mode
-echo 'Changing PostgreSQL authentication mode...'
+# Changing PostgreSQL authentication mode
+echo '@@@ Changing PostgreSQL authentication mode...'
 sed -i "s/local   all             postgres                                peer/local   all             postgres                                trust/g" /etc/postgresql/10/main/pg_hba.conf
 
 if [[ $? > 0 ]]
@@ -281,7 +222,6 @@ then
 else
     echo "The command ran succesfuly, continuing with script."
 fi
-
 
 
 # restarting postgres
@@ -298,13 +238,11 @@ fi
 
 
 
-echo '* running osm2pgsql *'
-# osm2pgsql --slim -d gis -C 3600 --hstore -S openstreetmap-carto-4.21.1/openstreetmap-carto.style $MapDataFileName
-osm2pgsql -U postgres --slim -d gis -C 1800 --hstore -S $OSMUserHome/openstreetmap-carto-4.21.1/openstreetmap-carto.style $OSMUserHome/$MapDataFileName
+# Create osm user on your operating system so the tile server can run as osm user.
+echo '* creating operating system user ['$OSMUserName'] *'
+#sudo adduser $OSMUserName --disabled-password --shell /bin/bash --gecos ""
+sudo useradd -m $OSMUserName
 
-# osm2gpsql will run in slim mode which is recommended over the normal mode. -d stands for --database. -C flag specify the cache size in MB. Bigger cache size results in faster import speed but you need to have enough RAM to use cache. -S flag specify the style file. And finally you need to specify the map data file.
-
-# exit
 if [[ $? > 0 ]]
 then
     echo "The command failed, exiting."
@@ -315,28 +253,90 @@ fi
 
 
 
+OSMUserHome=/home/$OSMUserName/
+
+
+
+# *** Step 3: Installing osm2pgsql ***
+echo '************************************'
+echo '*** Step 3: Installing osm2pgsql ***'
+echo '************************************'
+mkdir ~/src
+cd ~/src
+git clone git://github.com/openstreetmap/osm2pgsql.git
+cd osm2pgsql
+
+echo 'Installing osm2pgsql dependecies...'
+sudo apt-get install -y make cmake g++ libboost-dev libboost-system-dev libboost-filesystem-dev libexpat1-dev zlib1g-dev libbz2-dev libpq-dev libgeos-dev libgeos++-dev libproj-dev lua5.2 liblua5.2-dev
+
+if [[ $? > 0 ]]
+then
+    echo "The command failed, exiting."
+    exit
+else
+    echo "The command ran succesfuly, continuing with script."
+fi
+
+
+echo 'Installing osm2pgsql...'
+mkdir build && cd build
+cmake ..
+
+make
+
+sudo make install
+
+
+if [[ $? > 0 ]]
+then
+    echo "The command failed, exiting."
+    exit
+else
+    echo "The command ran succesfuly, continuing with script."
+fi
+
+
+# *** Step 4: Installing Mapnik ***
+echo '************************************'
+echo '*** Step 4: Installing Mapnik ***'
+echo '************************************'
+
+echo 'Installing Mapnik dependecies...'
+sudo apt-get install autoconf apache2-dev libtool libxml2-dev libbz2-dev libgeos-dev libgeos++-dev libproj-dev gdal-bin libmapnik-dev mapnik-utils python-mapnik
+
+if [[ $? > 0 ]]
+then
+    echo "The command failed, exiting."
+    exit
+else
+    echo "The command ran succesfuly, continuing with script."
+fi
+
+echo '@@@ Testing python mapnik...'
+python -c "import mapnik"
+
+if [[ $? > 0 ]]
+then
+    echo "The command failed, exiting."
+    exit
+else
+    echo "The command ran succesfuly, continuing with script."
+fi
+
+
 # *** Step 5: Install mod_tile ***
 echo '********************************'
 echo '*** Step 5: Install mod_tile ***'
 echo '********************************'
 # mod_tile is an Apache module that is required to serve tiles. Currently no binary package is available for Ubuntu. We can compile it from Github repository.
+echo '@@@ using user: '$(whoami)' current directory: '$(pwd)
 
-cd $OSMUserHome
-
-# mkdir ~/src && cd ~/src
-sudo mkdir src && cd src
-
-echo 'using user: '$(whoami)' current directory: '$(pwd)
-
+cd ~/src
 echo '* cloning mod_tile from GitHub *'
-# git clone https://github.com/openstreetmap/mod_tile.git
-git clone https://github.com/SomeoneElseOSM/mod_tile.git
-
-cd mod_tile/
-
-# Compile and install
-echo 'Running autogen...'
-sudo ./autogen.sh
+git clone -b switch2osm git://github.com/SomeoneElseOSM/mod_tile.git
+cd mod_tile
+echo '@@@ Running autogen...'
+./autogen.sh
 
 if [[ $? > 0 ]]
 then
@@ -347,7 +347,7 @@ else
 fi
 
 echo 'Running configure...'
-sudo ./configure
+./configure
 
 if [[ $? > 0 ]]
 then
@@ -357,8 +357,9 @@ else
     echo "The command ran succesfuly, continuing with script."
 fi
 
+
 echo 'Running make...'
-sudo make
+make
 
 if [[ $? > 0 ]]
 then
@@ -393,33 +394,23 @@ fi
 sudo ldconfig
 
 
-sudo mkdir /var/run/renderd
-sudo chown -R $OSMUserName:$OSMUserName /var/run/renderd
 
 
 
-# *** Step 6: Generate Mapnik Stylesheet ***
-echo '******************************************'
-echo '*** Step 6: Generate Mapnik Stylesheet ***'
-echo '******************************************'
-echo 'using user: '$(whoami)' current directory: '$(pwd)
+# *** Step 6: Stylesheet configuration ***
+echo '****************************************************'
+echo '*** Step 6: Stylesheet configuration ***'
+echo '****************************************************'
+cd ~/src
+git clone git://github.com/gravitystorm/openstreetmap-carto.git
+cd openstreetmap-carto
 
 
+# wget https://github.com/gravitystorm/openstreetmap-carto/archive/v4.21.1.tar.gz
+# tar xvf v4.21.1.tar.gz
+# rm v4.21.1.tar.gz
 
-echo 'installing required fonts'
-sudo apt-get install -y fonts-noto-cjk fonts-noto-hinted fonts-noto-unhinted fonts-hanazono ttf-unifont
-
-if [[ $? > 0 ]]
-then
-    echo "The command failed, exiting."
-    exit
-else
-    echo "The command ran succesfuly, continuing with script."
-fi
-
-
-
-sudo apt-get install gdal-bin libmapnik-dev mapnik-utils python-mapnik node-carto -y
+sudo apt-get install -y npm nodejs
 
 if [[ $? > 0 ]]
 then
@@ -431,26 +422,12 @@ fi
 
 
 
-sudo apt-get install npm nodejs -y
-
-if [[ $? > 0 ]]
-then
-    echo "The command failed, exiting."
-    exit
-else
-    echo "The command ran succesfuly, continuing with script."
-fi
-
-
-
-# * check mapnik version *
-MAPNIK_EXPECTED_VERSION="3.0.19"
-if [ $(mapnik-config -v) != $MAPNIK_EXPECTED_VERSION ]
-then
-    echo 'ASSERT FAILED: expected mapnik version '$MAPNIK_EXPECTED_VERSION >>/dev/stderr
-fi
-
-
+# # * check mapnik version *
+# MAPNIK_EXPECTED_VERSION="3.0.19"
+# if [ $(mapnik-config -v) != $MAPNIK_EXPECTED_VERSION ]
+# then
+#     echo 'ASSERT FAILED: expected mapnik version '$MAPNIK_EXPECTED_VERSION >>/dev/stderr
+# fi
 
 sudo npm install -g carto
 
@@ -463,42 +440,52 @@ else
 fi
 
 
+echo '@@@ carto -v: $(carto -v)'
 
-sudo su - $OSMUserName
+carto project.mml > mapnik.xml
 
 
-cd $OSMUserHome
 
-sudo chown -R $OSMUserName:$OSMUserName openstreetmap-carto-4.21.1/
 
-cd openstreetmap-carto-4.21.1/
 
-# ./get-shapefiles.sh
-./scripts/get-shapefiles.py
+# *** Step 7: Download Map Data ***
+echo '*********************************'
+echo '*** Step 7: Download Map Data ***'
+echo '*********************************'
+echo '(downloading from '$MapDataUri/$MapDataFileName')'
+# sudo su - $OSMUserName
 
-carto project.mml > style.xml || echo "Something goes wrong executing carto" && exit
-
-cd ..
-
+mkdir ~/data
+cd ~/data
+wget -c $MapDataUri/$MapDataFileName
 # exit
 
 
+# Recommendations before Importing Map Data
+# sudo fallocate -l 2G /swapfile
+# sudo chmod 600 /swapfile
+# sudo mkswap /swapfile
+# sudo swapon /swapfile
 
-# *** Step 7: Configuring renderd ***
-echo '***********************************'
-echo '*** Step 7: Configuring renderd ***'
-echo '***********************************'
-echo 'using user: '$(whoami)' current directory: '$(pwd)
+# The import process can take some time. It’s recommended to configure SSH keepalive so that you don’t lose the SSH connection. It’s very easy to do. Just open the SSH client configuration file on your local Linux machine.
+# sudo nano /etc/ssh/ssh_config
 
-echo '* replacing values in renderd.conf *'
-# RENDERD_CONF_PATH='/usr/local/etc/renderd.conf'
-RENDERD_CONF_PATH='/home/osm/src/mod_tile/debian/renderd.conf'
+# And paste the following text at the end of the file.
+# ServerAliveInterval 60
 
-# In the [default] section, change the value of XML and HOST to
-# XML=/home/osm/openstreetmap-carto-2.41.0/style.xml
-# HOST=localhost
-echo 'Replacing the value of XML [default] section'
-sudo sed -i "s/^XML=\/home\/jburgess\/osm\/svn.openstreetmap.org\/applications\/rendering\/mapnik\/osm-local.xml/XML=\/home\/osm\/openstreetmap-carto-4.21.1\/style.xml/g" $RENDERD_CONF_PATH
+
+
+# *** Step 8: Import the Map Data to PostgreSQL ***
+echo '*************************************************'
+echo '*** Step 8: Import the Map Data to PostgreSQL ***'
+echo '*************************************************'
+
+
+echo '* running osm2pgsql *'
+
+# osm2pgsql -U postgres --slim -d gis -C 1800 --hstore -S $OSMUserHome/openstreetmap-carto-4.21.1/openstreetmap-carto.style $OSMUserHome/$MapDataFileName
+
+osm2pgsql -U postgres --slim -d gis -C 1800 --hstore -S ~/src/openstreetmap-carto/openstreetmap-carto.style --create -G --tag-transform-script ~/src/openstreetmap-carto/openstreetmap-carto.lua --number-processes 1  ~/data/$MapDataFileName
 
 if [[ $? > 0 ]]
 then
@@ -507,6 +494,72 @@ then
 else
     echo "The command ran succesfuly, continuing with script."
 fi
+
+cd ~/src/openstreetmap-carto/
+
+echo '@@@ running get-shapefiles.py...'
+scripts/get-shapefiles.py
+
+if [[ $? > 0 ]]
+then
+    echo "The command failed, exiting."
+    exit
+else
+    echo "The command ran succesfuly, continuing with script."
+fi
+
+
+echo '@@@ installing required fonts...'
+sudo apt-get install -y fonts-noto-cjk fonts-noto-hinted fonts-noto-unhinted fonts-hanazono ttf-unifont
+
+if [[ $? > 0 ]]
+then
+    echo "The command failed, exiting."
+    exit
+else
+    echo "The command ran succesfuly, continuing with script."
+fi
+
+
+
+
+
+# *** Step 9: Setting up webserver ***
+echo '************************************'
+echo '*** Step 9: Setting up webserver ***'
+echo '************************************'
+
+# *** Step 9.1: Configuring renderd ***
+echo '*** Step 9.1: Configuring renderd ***'
+echo 'using user: '$(whoami)' current directory: '$(pwd)
+
+echo '* replacing values in renderd.conf *'
+RENDERD_CONF_PATH='/usr/local/etc/renderd.conf'
+# RENDERD_CONF_PATH='/home/osm/src/mod_tile/debian/renderd.conf'
+
+
+echo 'Replacing the value of num_threads [default] section'
+sudo sed -i "s/^num_threads=\d+/num_threads=2/g" $RENDERD_CONF_PATH
+
+
+# In the [default] section, change the value of XML and HOST to
+# XML=/home/osm/openstreetmap-carto-2.41.0/style.xml
+# HOST=localhost
+echo 'Replacing the value of XML [default] section'
+# sudo sed -i "s/^XML=\/home\/jburgess\/osm\/svn.openstreetmap.org\/applications\/rendering\/mapnik\/osm-local.xml/XML=\/home\/osm\/openstreetmap-carto-4.21.1\/style.xml/g" $RENDERD_CONF_PATH
+# sudo sed -i "s/^XML=[\w+|\/+|-]+.xml/XML=\/home\/osm\/openstreetmap-carto-4.21.1\/style.xml/gmi" $RENDERD_CONF_PATH
+
+style_path=$(echo ~/src/openstreetmap-carto/mapnik.xml | sed 's_/_\\/_g')
+sudo sed -i 's/^XML=[\w+|\/+|\-]+.xml/XML='$style_path'/g' $RENDERD_CONF_PATH
+
+
+# if [[ $? > 0 ]]
+# then
+#     echo "The command failed, exiting."
+#     exit
+# else
+#     echo "The command ran succesfuly, continuing with script."
+# fi
 
 
 echo 'Replacing the value of HOST [default] section'
@@ -521,17 +574,17 @@ else
 fi
 
 
-# Replacing the value of plugins_dir [mapnik] section
-echo 'Replacing the value of plugins_dir [mapnik] section'
-sudo sed -i "s/^plugins_dir=\/usr\/lib\/mapnik\/input/plugins_dir=\/usr\/lib\/mapnik\/3.0\/input/g" $RENDERD_CONF_PATH
+# # Replacing the value of plugins_dir [mapnik] section
+# echo 'Replacing the value of plugins_dir [mapnik] section'
+# sudo sed -i "s/^plugins_dir=\/usr\/lib\/mapnik\/input/plugins_dir=\/usr\/lib\/mapnik\/3.0\/input/g" $RENDERD_CONF_PATH
 
-if [[ $? > 0 ]]
-then
-    echo "The command failed, exiting."
-    exit
-else
-    echo "The command ran succesfuly, continuing with script."
-fi
+# if [[ $? > 0 ]]
+# then
+#     echo "The command failed, exiting."
+#     exit
+# else
+#     echo "The command ran succesfuly, continuing with script."
+# fi
 
 
 
@@ -578,10 +631,58 @@ else
     echo "The command ran succesfuly, continuing with script."
 fi
 
-sudo mkdir -p /var/lib/mod_tile || echo "Unable to create /var/lib/mod_tile folder" && exit
 
-# sudo chown osm:osm /var/lib/mod_tile
-sudo chown $OSMUserName:$OSMUserName /var/lib/mod_tile
+
+
+
+
+
+
+# *** Step 10: Configuring Apache ***
+echo '***********************************'
+echo '*** Step 10: Configuring Apache ***'
+echo '***********************************'
+
+echo '@@@ creating /var/lib/mod_tile folder...'
+sudo mkdir -p /var/lib/mod_tile
+
+if [[ $? > 0 ]]
+then
+    echo "@@@ Unable to create /var/lib/mod_tile folder @@@"
+    exit
+else
+    echo "The command ran succesfuly, continuing with script."
+fi
+
+echo '@@@ changing permissions to folder'
+sudo chown $OSMUserName /var/lib/mod_tile
+
+if [[ $? > 0 ]]
+then
+    echo "The command failed, exiting."
+    exit
+else
+    echo "The command ran succesfuly, continuing with script."
+fi
+
+
+echo '@@@ creating /var/run/renderd folder...'
+sudo mkdir /var/run/renderd
+
+if [[ $? > 0 ]]
+then
+    echo "@@@ Unable to create /var/run/renderd folder @@@"
+    exit
+else
+    echo "The command ran succesfuly, continuing with script."
+fi
+
+echo '@@@ changing permissions to folder'
+sudo chown -R $OSMUserName /var/run/renderd
+
+
+
+
 
 
 # start renderd service
@@ -617,6 +718,32 @@ then
 else
     echo "The command ran succesfuly, continuing with script."
 fi
+
+echo Create a module load file
+echo "LoadModule tile_module /usr/lib/apache2/modules/mod_tile.so" | sudo tee /etc/apache2/conf-available/mod_tile.conf
+
+
+echo '@@@ enabling mod_tile module'
+sudo a2enconf mod_tile
+
+if [[ $? > 0 ]]
+then
+    echo "The command failed, exiting."
+    exit
+else
+    echo "The command ran succesfuly, continuing with script."
+fi
+
+
+
+
+
+
+
+
+
+
+
 
 
 
