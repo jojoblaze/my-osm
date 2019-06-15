@@ -19,7 +19,7 @@ MapDataUriEurope=https://download.geofabrik.de/europe
 ItalyMapFileName=italy-latest.osm.pbf
 
 # *** Italy ***
-MapDataUriItaly=https://download.geofabrik.de/europe/italy/
+MapDataUriItaly=https://download.geofabrik.de/europe/italy
 ItalyNorthWestMapFileName=nord-ovest-latest.osm.pbf
 ItalyNorthEastMapFileName=nord-est.html
 ItalyCenterMapFileName=centro-latest.osm.pbf
@@ -104,7 +104,7 @@ export DEBIAN_FRONTEND=noninteractive
 echo '*************************************'
 echo '*** Step 1 - Install dependencies ***'
 echo '*************************************'
-sudo apt-get install -y libboost-all-dev git-core tar unzip wget bzip2 build-essential autoconf libtool libxml2-dev libgeos-dev libgeos++-dev libpq-dev libbz2-dev libproj-dev munin-node munin libprotobuf-c0-dev protobuf-c-compiler libfreetype6-dev libtiff5-dev libicu-dev libgdal-dev libcairo-dev libcairomm-1.0-dev apache2 apache2-dev libagg-dev liblua5.2-dev ttf-unifont lua5.1 liblua5.1-dev libgeotiff-epsg curl
+sudo apt-get install -y libboost-all-dev git-core tar unzip wget bzip2 build-essential autoconf libtool libxml2-dev libgeos-dev libgeos++-dev libpq-dev libbz2-dev libproj-dev munin-node munin libprotobuf-c0-dev protobuf-c-compiler libfreetype6-dev libtiff5-dev libicu-dev libgdal-dev libcairo-dev libcairomm-1.0-dev apache2 libagg-dev liblua5.2-dev ttf-unifont lua5.1 liblua5.1-dev libgeotiff-epsg curl
 
 if [[ $? > 0 ]]
 then
@@ -199,7 +199,7 @@ else
     echo "The command ran succesfuly, continuing with script."
 fi
 
-command="ALTER TABLE geometry_columns OWNER TO $OSMUserName;"
+command="ALTER TABLE spatial_ref_sys OWNER TO $OSMUserName;"
 echo 'PostgreSQL - Executing command:'$command
 sudo -u postgres psql -c $command -d gis
 
@@ -302,7 +302,7 @@ echo '*** Step 4: Installing Mapnik ***'
 echo '************************************'
 
 echo 'Installing Mapnik dependecies...'
-sudo apt-get install autoconf apache2-dev libtool libxml2-dev libbz2-dev libgeos-dev libgeos++-dev libproj-dev gdal-bin libmapnik-dev mapnik-utils python-mapnik
+sudo apt-get install -y apache2-dev libtool libxml2-dev libbz2-dev libgeos-dev libgeos++-dev libproj-dev gdal-bin libmapnik-dev mapnik-utils python-mapnik
 
 if [[ $? > 0 ]]
 then
@@ -347,7 +347,13 @@ else
 fi
 
 echo 'Running configure...'
-./configure
+# ./configure
+autoheader \
+    && aclocal \
+    && libtoolize --ltdl --copy --force \
+    && automake --add-missing --copy \
+    && ./autogen.sh \
+    && ./configure
 
 if [[ $? > 0 ]]
 then
@@ -495,10 +501,10 @@ else
     echo "The command ran succesfuly, continuing with script."
 fi
 
-cd ~/src/openstreetmap-carto/
+cd ~/src/openstreetmap-carto/scripts
 
 echo '@@@ running get-shapefiles.py...'
-scripts/get-shapefiles.py
+./get-shapefiles.py
 
 if [[ $? > 0 ]]
 then
@@ -592,7 +598,8 @@ cd $WORKING_DIR
 
 # Install renderd init script by copying the sample init script.
 echo '* Install renderd init script by copying the sample init script *'
-sudo cp mod_tile/debian/renderd.init /etc/init.d/renderd
+
+sudo cp ~/src/mod_tile/debian/renderd.init /etc/init.d/renderd
 
 # Grant execute permission
 echo '* Grant execute permission *'
@@ -764,6 +771,7 @@ fi
 # Create a module load file
 echo "LoadModule tile_module /usr/lib/apache2/modules/mod_tile.so" | sudo tee /etc/apache2/mods-available/mod_tile.load
 
+sudo a2enconf mod_tile
 
 # Create a symlink
 sudo ln -s /etc/apache2/mods-available/mod_tile.load /etc/apache2/mods-enabled/
