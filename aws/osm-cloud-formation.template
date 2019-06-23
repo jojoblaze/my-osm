@@ -1,0 +1,1220 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "AWS CloudFormation script for OpenStreetMap.",
+  "Parameters": {
+    "KeyName": {
+      "Description": "Name of an existing EC2 KeyPair to enable SSH access to the instance.",
+      "Type": "AWS::EC2::KeyPair::KeyName",
+      "ConstraintDescription": "must be the name of an existing EC2 KeyPair."
+    },
+    "InstanceType": {
+      "Description": "WebServer EC2 instance type",
+      "Type": "String",
+      "Default": "t2.micro",
+      "AllowedValues": [
+        "t1.micro",
+        "t2.nano",
+        "t2.micro",
+        "t2.small",
+        "t2.medium",
+        "t2.large"
+      ],
+      "ConstraintDescription": "must be a valid EC2 instance type."
+    },
+    "SSHLocation": {
+      "Description": " The IP address range that can be used access the web server using SSH.",
+      "Type": "String",
+      "MinLength": "9",
+      "MaxLength": "18",
+      "Default": "0.0.0.0/0",
+      "AllowedPattern": "(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})/(\\d{1,2})",
+      "ConstraintDescription": "must be a valid IP CIDR range of the form x.x.x.x/x."
+    },
+    "OSMDBName": {
+      "Description": "PostgreSQL database name",
+      "Type": "String",
+      "Default": "gis"
+    },
+    "OSMUserName": {
+      "Description": "PostgreSQL user name",
+      "Type": "String",
+      "Default": "osm"
+    },
+    "OSMRegion": {
+      "Description": "OSM world region data",
+      "Type": "String",
+      "Default": "europe/italy/north-east",
+      "AllowedValues": [
+        "africa",
+        "antarctica",
+        "asia",
+        "australia-oceania",
+        "north-america",
+        "central-america",
+        "south-america",
+        "europe",
+        "europe/italy",
+        "italy",
+        "europe/italy/north-west",
+        "europe/italy/north-east",
+        "europe/italy/center",
+        "europe/italy/south",
+        "europe/italy/islands"
+      ],
+      "ConstraintDescription": "must be a valid OSM region."
+    }
+  },
+  "Mappings": {
+    "AWSInstanceType2Arch": {
+      "t1.micro": {
+        "Arch": "PV64"
+      },
+      "t2.nano": {
+        "Arch": "HVM64"
+      },
+      "t2.micro": {
+        "Arch": "HVM64"
+      },
+      "t2.small": {
+        "Arch": "HVM64"
+      },
+      "t2.medium": {
+        "Arch": "HVM64"
+      },
+      "t2.large": {
+        "Arch": "HVM64"
+      }
+    },
+    "AWSRegionArch2AMI": {
+      "eu-central-1": {
+        "HVM64": "ami-0bdf93799014acdc4",
+        "HVMG2": "ami-0bdf93799014acdc4"
+      }
+    },
+    "OSMRegions": {
+      "europe/italy/north-west": {
+        "url": "https://download.geofabrik.de/europe/italy",
+        "filename": "nord-ovest-latest.osm.pbf"
+      },
+      "europe/italy/north-east": {
+        "url": "https://download.geofabrik.de/europe/italy",
+        "filename": "nord-est.osm.pbf"
+      }
+    }
+  },
+  "Resources": {
+    "VPC": {
+      "Type": "AWS::EC2::VPC",
+      "Properties": {
+        "EnableDnsSupport": "true",
+        "EnableDnsHostnames": "true",
+        "CidrBlock": "10.0.0.0/16"
+      },
+      "Metadata": {
+        "AWS::CloudFormation::Designer": {
+          "id": "96a791f0-938b-4ebe-9f3c-b3fe2a588aee"
+        }
+      }
+    },
+    "PublicSubnet": {
+      "Type": "AWS::EC2::Subnet",
+      "Properties": {
+        "CidrBlock": "10.0.0.0/24",
+        "VpcId": {
+          "Ref": "VPC"
+        }
+      },
+      "Metadata": {
+        "AWS::CloudFormation::Designer": {
+          "id": "3df467ad-673c-4c48-a41c-3ac1626961e3"
+        }
+      }
+    },
+    "InternetGateway": {
+      "Type": "AWS::EC2::InternetGateway",
+      "Metadata": {
+        "AWS::CloudFormation::Designer": {
+          "id": "a166c4f5-7cc4-429b-b9d8-2c8c43facc63"
+        }
+      }
+    },
+    "VPCGatewayAttachment": {
+      "Type": "AWS::EC2::VPCGatewayAttachment",
+      "Properties": {
+        "VpcId": {
+          "Ref": "VPC"
+        },
+        "InternetGatewayId": {
+          "Ref": "InternetGateway"
+        }
+      },
+      "Metadata": {
+        "AWS::CloudFormation::Designer": {
+          "id": "1790ebeb-2e41-4293-8cc1-aaba134fd1e0"
+        }
+      }
+    },
+    "PublicRouteTable": {
+      "Type": "AWS::EC2::RouteTable",
+      "Properties": {
+        "VpcId": {
+          "Ref": "VPC"
+        }
+      },
+      "Metadata": {
+        "AWS::CloudFormation::Designer": {
+          "id": "175bad80-0988-4588-a919-331be705b02d"
+        }
+      }
+    },
+    "PublicRoute": {
+      "Type": "AWS::EC2::Route",
+      "DependsOn": "VPCGatewayAttachment",
+      "Properties": {
+        "RouteTableId": {
+          "Ref": "PublicRouteTable"
+        },
+        "DestinationCidrBlock": "0.0.0.0/0",
+        "GatewayId": {
+          "Ref": "InternetGateway"
+        }
+      },
+      "Metadata": {
+        "AWS::CloudFormation::Designer": {
+          "id": "143bbaa1-66a2-42a5-885f-e6300817103c"
+        }
+      }
+    },
+    "PublicSubnetRouteTableAssociation": {
+      "Type": "AWS::EC2::SubnetRouteTableAssociation",
+      "Properties": {
+        "SubnetId": {
+          "Ref": "PublicSubnet"
+        },
+        "RouteTableId": {
+          "Ref": "PublicRouteTable"
+        }
+      },
+      "Metadata": {
+        "AWS::CloudFormation::Designer": {
+          "id": "528e2b71-46e6-4e09-815a-f70630755219"
+        }
+      }
+    },
+    "WebServerSecurityGroup": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "VpcId": {
+          "Ref": "VPC"
+        },
+        "GroupDescription": "Allow access from HTTP and SSH traffic",
+        "SecurityGroupIngress": [
+          {
+            "IpProtocol": "tcp",
+            "FromPort": "80",
+            "ToPort": "80",
+            "CidrIp": "0.0.0.0/0"
+          },
+          {
+            "IpProtocol": "tcp",
+            "FromPort": "8080",
+            "ToPort": "8080",
+            "CidrIp": "0.0.0.0/0"
+          },
+          {
+            "IpProtocol": "tcp",
+            "FromPort": "27017",
+            "ToPort": "27017",
+            "CidrIp": "0.0.0.0/0"
+          },
+          {
+            "IpProtocol": "tcp",
+            "FromPort": "22",
+            "ToPort": "22",
+            "CidrIp": {
+              "Ref": "SSHLocation"
+            }
+          }
+        ]
+      },
+      "Metadata": {
+        "AWS::CloudFormation::Designer": {
+          "id": "2e76192b-a4f8-48a5-92b6-abbfa8b83263"
+        }
+      }
+    },
+    "WebServerInstance": {
+      "Type": "AWS::EC2::Instance",
+      "Metadata": {
+        "AWS::CloudFormation::Init": {
+          "configSets": {
+            "All": [
+              "InstallPrerequisites",
+              "InstallPostgreSQL",
+              "ScaffoldApplication",
+              "DeployEnvironmentFile",
+              "ComposeUP"
+            ]
+          },
+          "InstallPrerequisites": {
+            "commands": {
+              "0_update_system": {
+                "command": "apt-get update -y"
+              },
+              "1_install dependecies": {
+                "command": {
+                  "Fn::Join": [
+                    " ",
+                    [
+                      "echo '*************************************'\n",
+                      "echo '*** Step 1 - Install dependencies ***'\n",
+                      "echo '*************************************'\n",
+                      "apt-get install -y ",
+                      "libboost-all-dev ",
+                      "git-core ",
+                      "tar ",
+                      "unzip ",
+                      "wget ",
+                      "bzip2 ",
+                      "build-essential ",
+                      "autoconf ",
+                      "libtool ",
+                      "libxml2-dev ",
+                      "libgeos-dev ",
+                      "libgeos++-dev ",
+                      "libpq-dev ",
+                      "libbz2-dev ",
+                      "libproj-dev ",
+                      "munin-node ",
+                      "munin ",
+                      "libprotobuf-c0-dev ",
+                      "protobuf-c-compiler ",
+                      "libfreetype6-dev ",
+                      "libtiff5-dev ",
+                      "libicu-dev ",
+                      "libgdal-dev ",
+                      "libcairo-dev ",
+                      "libcairomm-1.0-dev ",
+                      "apache2 ",
+                      "libagg-dev ",
+                      "liblua5.2-dev ",
+                      "ttf-unifont ",
+                      "lua5.1 ",
+                      "liblua5.1-dev ",
+                      "libgeotiff-epsg ",
+                      "curl",
+                      "\n"
+                    ]
+                  ]
+                }
+              },
+              "2_create_os_user": {
+                "env": {
+                  "OSMUserName": {
+                    "Ref": "OSMUserName"
+                  }
+                },
+                "command": {
+                  "Fn::Join": [
+                    " ",
+                    [
+                      "echo '* creating operating system user ['$OSMUserName'] *'\n",
+                      "useradd -m $OSMUserName"
+                    ]
+                  ]
+                }
+              }
+            }
+          },
+          "InstallPostgreSQL": {
+            "commands": {
+              "1_install_postgresql": {
+                "command": {
+                  "Fn::Join": [
+                    " ",
+                    [
+                      "echo '****************************************************************'\n",
+                      "echo '*** Step 2 - Install PostgreSQL Database Server with PostGIS ***'\n",
+                      "echo '****************************************************************'\n",
+                      "apt-get install -y ",
+                      "postgresql ",
+                      "postgresql-contrib ",
+                      "postgis ",
+                      "postgresql-10-postgis-2.4 ",
+                      "postgresql-10-postgis-scripts",
+                      "\n"
+                    ]
+                  ]
+                }
+              },
+              "2_create_postgresql_user": {
+                "env": {
+                  "OSMUserName": {
+                    "Ref": "OSMUserName"
+                  }
+                },
+                "command": "sudo -u postgres createuser $OSMUserName"
+              },
+              "3_create_postgresql_db": {
+                "env": {
+                  "OSMDBName": {
+                    "Ref": "OSMDBName"
+                  },
+                  "OSMUserName": {
+                    "Ref": "OSMUserName"
+                  }
+                },
+                "command": "sudo -u postgres createdb -E UTF8 -O $OSMUserName $OSMDBName"
+              },
+              "4_create_hstore_extension": {
+                "env": {
+                  "OSMDBName": {
+                    "Ref": "OSMDBName"
+                  }
+                },
+                "command": {
+                  "Fn::Join": [
+                    " ",
+                    [
+                      "echo 'Creating hstore extension on the gis database'\n",
+                      "sudo -u postgres psql -c \"CREATE EXTENSION hstore;\" -d $OSMDBName"
+                    ]
+                  ]
+                }
+              },
+              "5_postgis_extension": {
+                "env": {
+                  "OSMDBName": {
+                    "Ref": "OSMDBName"
+                  }
+                },
+                "command": {
+                  "Fn::Join": [
+                    " ",
+                    [
+                      "echo 'Creating postgis extension on gis database'\n",
+                      "sudo -u postgres psql -c \"CREATE EXTENSION postgis;\" -d $OSMDBName"
+                    ]
+                  ]
+                }
+              },
+              "6_alter_geometry_columns_table": {
+                "env": {
+                  "OSMDBName": {
+                    "Ref": "OSMDBName"
+                  },
+                  "OSMUserName": {
+                    "Ref": "OSMUserName"
+                  }
+                },
+                "command": {
+                  "Fn::Join": [
+                    " ",
+                    [
+                      "sudo -u postgres psql -c \"ALTER TABLE geometry_columns OWNER TO $OSMUserName;\" -d $OSMDBName"
+                    ]
+                  ]
+                }
+              },
+              "7_alter_spatial_ref_sys_table": {
+                "env": {
+                  "OSMDBName": {
+                    "Ref": "OSMDBName"
+                  },
+                  "OSMUserName": {
+                    "Ref": "OSMUserName"
+                  }
+                },
+                "command": {
+                  "Fn::Join": [
+                    " ",
+                    [
+                      "sudo -u postgres psql -c \"ALTER TABLE spatial_ref_sys OWNER TO $OSMUserName;\" -d $OSMDBName"
+                    ]
+                  ]
+                }
+              },
+              "8_postgresql_config": {
+                "command": {
+                  "Fn::Join": [
+                    " ",
+                    [
+                      "echo '@@@ Changing PostgreSQL authentication mode...'\n",
+                      "sed -i 's/local   all             postgres                                peer/local   all             postgres                                trust/g' /etc/postgresql/10/main/pg_hba.conf",
+                      "\n"
+                    ]
+                  ]
+                }
+              },
+              "9_restart_postgresql": {
+                "command": {
+                  "Fn::Join": [
+                    " ",
+                    [
+                      "echo '* restarting postgres *'\n",
+                      "sudo service postgresql restart",
+                      "\n"
+                    ]
+                  ]
+                }
+              }
+            }
+          },
+          "InstallOsm2PgSql": {
+            "commands": {
+              "0_install_prerequisites": {
+                "command": {
+                  "Fn::Join": [
+                    " ",
+                    [
+                      "echo '************************************'\n",
+                      "echo '*** Step 3: Installing osm2pgsql ***'\n",
+                      "echo '************************************'\n",
+                      "echo 'Installing osm2pgsql dependecies...'\n",
+                      "apt-get install -y make cmake g++ libboost-dev libboost-system-dev libboost-filesystem-dev libexpat1-dev zlib1g-dev libbz2-dev libpq-dev libproj-dev lua5.2 liblua5.2-dev"
+                    ]
+                  ]
+                }
+              },
+              "1_download": {
+                "command": {
+                  "Fn::Join": [
+                    " ",
+                    [
+                      "mkdir ~/src\n",
+                      "cd ~/src\n",
+                      "git clone git://github.com/openstreetmap/osm2pgsql.git\n",
+                      "cd osm2pgsql\n"
+                    ]
+                  ]
+                }
+              },
+              "2_build_and_install": {
+                "command": {
+                  "Fn::Join": [
+                    " ",
+                    [
+                      "echo 'Installing osm2pgsql...'\n",
+                      "mkdir build && cd build\n",
+                      "cmake ..\n",
+                      "make\n",
+                      "make install\n"
+                    ]
+                  ]
+                }
+              }
+            }
+          },
+          "InstallMapnik": {
+            "commands": {
+              "0_install_prerequisites": {
+                "command": {
+                  "Fn::Join": [
+                    " ",
+                    [
+                      "echo 'Installing Mapnik dependecies...'\n",
+                      "apt-get install -y apache2-dev libtool libxml2-dev libbz2-dev libgeos-dev libgeos++-dev libproj-dev gdal-bin libmapnik-dev mapnik-utils python-mapnik\n"
+                    ]
+                  ]
+                }
+              },
+              "1_download": {
+                "command": {
+                  "Fn::Join": [
+                    " ",
+                    [
+                      "mkdir ~/src\n",
+                      "cd ~/src\n",
+                      "git clone git://github.com/openstreetmap/osm2pgsql.git\n"
+                    ]
+                  ]
+                }
+              },
+              "2_build_and_install": {
+                "command": {
+                  "Fn::Join": [
+                    " ",
+                    [
+                      "echo 'Installing osm2pgsql...'\n",
+                      "cd osm2pgsql\n",
+                      "mkdir build && cd build\n",
+                      "cmake ..\n",
+                      "make\n",
+                      "make install\n"
+                    ]
+                  ]
+                }
+              }
+            }
+          },
+          "InstallModTile": {
+            "commands": {
+              "0_download": {
+                "command": {
+                  "Fn::Join": [
+                    " ",
+                    [
+                      "echo '**********************************'\n",
+                      "echo '*** Build and install mod_tile ***'\n",
+                      "echo '**********************************'\n",
+                      "cd ~/src\n",
+                      "git clone -b switch2osm git://github.com/SomeoneElseOSM/mod_tile.git\n"
+                    ]
+                  ]
+                }
+              },
+              "1_build_and_install": {
+                "command": {
+                  "Fn::Join": [
+                    " ",
+                    [
+                      "cd mod_tile\n",
+                      "./autogen.sh\n",
+                      "./configure\n",
+                      "make\n",
+                      "make install\n",
+                      "make install-mod_tile\n",
+                      "ldconfig"
+                    ]
+                  ]
+                }
+              }
+            }
+          },
+          "StylesheetConfiguration": {
+            "commands": {
+              "0_install_prerequisites": {
+                "command": {
+                  "Fn::Join": [
+                    " ",
+                    [
+                      "apt-get install -y npm nodejs\n",
+                      "npm install -g carto\n"
+                    ]
+                  ]
+                }
+              },
+              "1_download": {
+                "command": {
+                  "Fn::Join": [
+                    " ",
+                    [
+                      "echo '********************************'\n",
+                      "echo '*** Stylesheet configuration ***'\n",
+                      "echo '********************************'\n",
+                      "cd ~/src\n",
+                      "git clone git://github.com/gravitystorm/openstreetmap-carto.git\n"
+                    ]
+                  ]
+                }
+              },
+              "2_create_stylesheet": {
+                "command": {
+                  "Fn::Join": [
+                    " ",
+                    [
+                      "cd openstreetmap-carto\n",
+                      "carto project.mml > mapnik.xml\n"
+                    ]
+                  ]
+                }
+              }
+            }
+          },
+          "Deploy_map_data_url_provider": {
+            "files": {
+              "/home/ubuntu/osm-utility/map_data_url_provider.sh": {
+                "content": {
+                  "Fn::Join": [
+                    "",
+                    [
+                      "#!/bin/bash\n",
+                      "OSMRegion=$1\n",
+                      "\n",
+                      "MapDataUri=http://download.geofabrik.de\n",
+                      "\n",
+                      "AfricaMapFileName=africa-latest.osm.pbf\n",
+                      "AntarcticaMapFileName=antarctica-latest.osm.pbf\n",
+                      "AsiaMapFileName=asia-latest.osm.pbf\n",
+                      "AustraliaMapFileName=australia-oceania-latest.osm.pbf\n",
+                      "EuropeMapFileName=europe-latest.osm.pbf\n",
+                      "CentralAmericaMapFileName=central-america-latest.osm.pbf\n",
+                      "NorthAmericaMapFileName=north-america-latest.osm.pbf\n",
+                      "SouthAmericaMapFileName=south-america-latest.osm.pbf\n",
+                      "\n",
+                      "# *** Europe ***\n",
+                      "MapDataUriEurope=https://download.geofabrik.de/europe\n",
+                      "ItalyMapFileName=italy-latest.osm.pbf\n",
+                      "\n",
+                      "# *** Italy ***\n",
+                      "MapDataUriItaly=https://download.geofabrik.de/europe/italy\n",
+                      "ItalyNorthWestMapFileName=nord-ovest-latest.osm.pbf\n",
+                      "ItalyNorthEastMapFileName=nord-est.html\n",
+                      "ItalyCenterMapFileName=centro-latest.osm.pbf\n",
+                      "ItalySouthMapFileName=sud-latest.osm.pbf\n",
+                      "ItalyIslandsMapFileName=isole-latest.osm.pbf\n",
+                      "\n",
+                      "case $OSMRegion in\n",
+                      "    africa)\n",
+                      "        MapDataFileName=$AfricaMapFileName\n",
+                      "        ;;\n",
+                      "    antarctica)\n",
+                      "        MapDataFileName=$AntarcticaMapFileName\n",
+                      "        ;;\n",
+                      "    asia)\n",
+                      "        MapDataFileName=$AsiaMapFileName\n",
+                      "        ;;\n",
+                      "    australia-oceania)\n",
+                      "        MapDataFileName=$AustraliaMapFileName\n",
+                      "        ;;\n",
+                      "    north-america)\n",
+                      "        MapDataFileName=$NorthAmericaMapFileName\n",
+                      "        ;;\n",
+                      "    central-america)\n",
+                      "        MapDataFileName=$CentralAmericaMapFileName\n",
+                      "        ;;\n",
+                      "    south-america)\n",
+                      "        MapDataFileName=$SouthAmericaMapFileName\n",
+                      "        ;;\n",
+                      "    europe)\n",
+                      "        MapDataFileName=$EuropeMapFileName\n",
+                      "        ;;\n",
+                      "    europe/italy)\n",
+                      "        MapDataFileName=$ItalyMapFileName\n",
+                      "        MapDataUri=$MapDataUriEurope\n",
+                      "        ;;\n",
+                      "    europe/italy/north-west)\n",
+                      "        MapDataFileName=$ItalyNorthWestMapFileName\n",
+                      "        MapDataUri=$MapDataUriItaly\n",
+                      "        ;;\n",
+                      "    europe/italy/north-east)\n",
+                      "        MapDataFileName=$ItalyNorthEastMapFileName\n",
+                      "        MapDataUri=$MapDataUriItaly\n",
+                      "        ;;\n",
+                      "    europe/italy/center)\n",
+                      "        MapDataFileName=$ItalyCenterMapFileName\n",
+                      "        MapDataUri=$MapDataUriItaly\n",
+                      "        ;;\n",
+                      "    europe/italy/south)\n",
+                      "        MapDataFileName=$ItalySouthMapFileName\n",
+                      "        MapDataUri=$MapDataUriItaly\n",
+                      "        ;;\n",
+                      "    europe/italy/islands)\n",
+                      "        MapDataFileName=$ItalyIslandsMapFileName\n",
+                      "        MapDataUri=$MapDataUriItaly\n",
+                      "        ;;\n",
+                      "  *)\n",
+                      "    echo '@@@ Unkown country or territory @@@'\n",
+                      "        exit\n",
+                      "    ;;\n",
+                      "esac\n",
+                      "\n",
+                      "echo $MapDataUri/$MapDataFileName\n"
+                    ]
+                  ]
+                },
+                "mode": "000644",
+                "owner": "ubuntu",
+                "group": "ubuntu"
+              }
+            }
+          },
+          "DownloadingMapData": {
+            "commands": {
+              "0_download_map_data": {
+                "env": {
+                  "OSMRegion": {
+                    "Ref": "OSMRegion"
+                  },
+                  "OSMMapDataUrl": {
+                    "Fn::Join": [
+                      "/",
+                      [
+                        {
+                          "Fn:FindInMap": [
+                            "OSMRegions",
+                            {
+                              "Ref": "OSMRegion"
+                            },
+                            "url"
+                          ]
+                        },
+                        {
+                          "Fn:FindInMap": [
+                            "OSMRegions",
+                            {
+                              "Ref": "OSMRegion"
+                            },
+                            "filename"
+                          ]
+                        }
+                      ]
+                    ]
+                  }
+                },
+                "command": {
+                  "Fn::Join": [
+                    " ",
+                    [
+                      "cd ~/src\n",
+                      "mkdir ~/data\n",
+                      "cd ~/data\n",
+                      "wget -c $OSMMapDataUrl",
+                      "\n"
+                    ]
+                  ]
+                }
+              },
+              "1_running_osm2pgsql": {
+                "env": {
+                  "OSMDBName": {
+                    "Ref": "OSMDBName"
+                  },
+                  "OSMMapDataFileName": {
+                    "Fn:FindInMap": [
+                      "OSMRegions",
+                      {
+                        "Ref": "OSMRegion"
+                      },
+                      "filename"
+                    ]
+                  }
+                },
+                "command": {
+                  "Fn::Join": [
+                    " ",
+                    [
+                      "echo '*************************'\n",
+                      "echo '*** running osm2pgsql ***'\n",
+                      "echo '*************************'\n",
+                      "osm2pgsql -U postgres --slim -d $OSMDBName -C 1800 --hstore -S ~/src/openstreetmap-carto/openstreetmap-carto.style --create -G --tag-transform-script ~/src/openstreetmap-carto/openstreetmap-carto.lua --number-processes 1  ~/data/$OSMMapDataFileName"
+                    ]
+                  ]
+                }
+              },
+              "2_get_shape_files": {
+                "command": {
+                  "Fn::Join": [
+                    " ",
+                    [
+                      "cd ~/src/openstreetmap-carto/scripts\n",
+                      "./get-shapefiles.py\n"
+                    ]
+                  ]
+                }
+              }
+            }
+          },
+          "InstallingFonts": {
+            "commands": {
+              "0_installing_fonts": {
+                "command": "apt-get install -y fonts-noto-cjk fonts-noto-hinted fonts-noto-unhinted fonts-hanazono ttf-unifont\n"
+              }
+            }
+          },
+          "SettingUpWebServer": {
+            "env": {
+              "RENDERD_CONF_PATH": "/usr/local/etc/renderd.conf",
+              "style_path": "$(echo ~/src/openstreetmap-carto/mapnik.xml | sed 's_/_\\/_g')"
+            },
+            "commands": {
+              "0_replace_values_in_renderd_conf": {
+                "command": {
+                  "Fn::Join": [
+                    " ",
+                    [
+                      "echo 'Replacing the value of num_threads [default] section'\n",
+                      "sed -i \"s/^num_threads=\\d+/num_threads=2/g\" $RENDERD_CONF_PATH\n",
+                      "\n",
+                      "echo 'Replacing the value of XML [default] section'\n",
+                      "sed -i \"s/^XML=[\\w+|\/+|\\-]+.xml/XML=$style_path/g\" $RENDERD_CONF_PATH\n",
+                      "\n",
+                      "echo 'Replacing the value of HOST [default] section'\n",
+                      "sed -i \"s/^HOST=tile.openstreetmap.org/HOST=$HOSTNAME/g\" $RENDERD_CONF_PATH"
+                    ]
+                  ]
+                }
+              }
+            }
+          },
+          "ScaffoldApplication": {
+            "files": {
+              "/home/ubuntu/download-release-assets.py": {
+                "content": {
+                  "Fn::Join": [
+                    "",
+                    [
+                      "import requests\n",
+                      "import json\n",
+                      "import argparse\n",
+                      "import sys\n",
+                      "parser = argparse.ArgumentParser()\n",
+                      "parser.add_argument('--token')\n",
+                      "parser.add_argument('--owner')\n",
+                      "parser.add_argument('--repo')\n",
+                      "args = parser.parse_args()\n",
+                      "GITHUB_TOKEN = args.token\n",
+                      "OWNER = args.owner\n",
+                      "REPO = args.repo\n",
+                      "release_url = 'https://api.github.com/repos/'+OWNER + '/'+REPO+'/releases/latest?access_token='+str(GITHUB_TOKEN)\n",
+                      "release_data = requests.get(url=release_url)\n",
+                      "assets_list = json.loads(release_data.content)['assets']\n",
+                      "for asset in assets_list:\n",
+                      "    # download asset data\n",
+                      "    url = asset['url']+'?access_token='+GITHUB_TOKEN\n",
+                      "    try:\n",
+                      "        asset_data_request = requests.get(url)\n",
+                      "    except:\n",
+                      "        sys.stderr.write('unable to fetch data from '+url)\n",
+                      "    asset_data = json.loads(asset_data_request.content)\n",
+                      "    # download file\n",
+                      "    filename = asset_data['name']\n",
+                      "    asset_url = 'https://api.github.com/repos/'+OWNER+'/'+REPO+'/releases/assets/'+str(asset_data['id'])+'?access_token='+GITHUB_TOKEN\n",
+                      "    sys.stdout.write('downloading ' + filename + ' from url: ' + asset_url)\n",
+                      "    s = requests.Session()\n",
+                      "    headers = {'Accept': 'application/octet-stream'}\n",
+                      "    s.headers.update(headers)\n",
+                      "    try:\n",
+                      "        binary_request = requests.get(asset_url, headers=headers, allow_redirects=True, stream=True)\n",
+                      "    except:\n",
+                      "        sys.stderr.write('unable to fetch data from '+asset_url)\n",
+                      "    try:\n",
+                      "        with open(filename, 'wb') as fd:\n",
+                      "            for chunk in binary_request.iter_content(chunk_size=128):\n",
+                      "                fd.write(chunk)\n",
+                      "            fd.close()\n",
+                      "    except:\n",
+                      "        sys.stderr.write('unable to open file '+filename)\n",
+                      "\n"
+                    ]
+                  ]
+                },
+                "mode": "000644",
+                "owner": "ubuntu",
+                "group": "ubuntu"
+              }
+            },
+            "commands": {
+              "a_create_folders": {
+                "command": {
+                  "Fn::Join": [
+                    " ",
+                    [
+                      "cd /home/ubuntu\n",
+                      "mkdir dnd\n",
+                      "chown -R ubuntu:ubuntu dnd\n",
+                      "cd dnd\n",
+                      "python /home/ubuntu/download-release-assets.py --token 2de6c18e592907b8a4a89dcc8e48d805f983bb47 --owner jojoblaze --repo dnd-environment\n",
+                      "chown -R ubuntu:ubuntu docker-compose.yml\n",
+                      "mkdir mongodb\n",
+                      "chown -R ubuntu:ubuntu mongodb\n",
+                      "cd mongodb\n",
+                      "curl -vLJ -H 'Authorization: token 2de6c18e592907b8a4a89dcc8e48d805f983bb47' -H 'Accept: application/octet-stream' https://github.com/jojoblaze/dnd-mongo/archive/latest.tar.gz --output mongo.tar.gz\n",
+                      "tar -xzvf mongo.tar.gz -C .\n",
+                      "chown -R ubuntu:ubuntu dnd-mongo-latest/\n",
+                      "mv dnd-mongo-latest/* .\n",
+                      "rm -r dnd-mongo-latest/\n",
+                      "rm mongo.tar.gz\n",
+                      "cd ..\n",
+                      "mkdir api\n",
+                      "chown -R ubuntu:ubuntu api\n",
+                      "cd api\n",
+                      "python /home/ubuntu/download-release-assets.py --token 2de6c18e592907b8a4a89dcc8e48d805f983bb47 --owner jojoblaze --repo dnd-api\n",
+                      "chown -R ubuntu:ubuntu Dockerfile\n",
+                      "mkdir dist\n",
+                      "tar -xvzf api.tar.gz -C ./dist/\n",
+                      "chown -R ubuntu:ubuntu dist\n",
+                      "rm api.tar.gz\n",
+                      "cd ..\n",
+                      "mkdir app\n",
+                      "chown -R ubuntu:ubuntu app\n",
+                      "cd app\n",
+                      "python /home/ubuntu/download-release-assets.py --token 2de6c18e592907b8a4a89dcc8e48d805f983bb47 --owner jojoblaze --repo dnd-app\n",
+                      "chown -R ubuntu:ubuntu Dockerfile\n",
+                      "mkdir dist\n",
+                      "tar xzvf dnd-app.tar.gz -C ./dist\n",
+                      "chown -R ubuntu:ubuntu dist\n",
+                      "rm dnd-app.tar.gz\n",
+                      "cd ..\n",
+                      "mkdir admin\n",
+                      "chown -R ubuntu:ubuntu admin\n",
+                      "cd admin\n",
+                      "cp /home/ubuntu/download-release-assets.py .\n",
+                      "python download-release-assets.py --token 2de6c18e592907b8a4a89dcc8e48d805f983bb47 --owner jojoblaze --repo dnd-adminapp\n",
+                      "mkdir dist\n",
+                      "tar xzvf dnd-admin.tar.gz -C ./dist\n",
+                      "chown -R ubuntu:ubuntu dist\n",
+                      "rm dnd-admin.tar.gz\n",
+                      "cd ..\n",
+                      "\n"
+                    ]
+                  ]
+                }
+              },
+              "b_create_docker_images": {
+                "command": {
+                  "Fn::Join": [
+                    " ",
+                    [
+                      "cd /home/ubuntu/dnd/mongodb\n",
+                      "docker build -t dnd-mongo .\n",
+                      "cd /home/ubuntu/dnd/api\n",
+                      "docker build -t dnd-api .\n",
+                      "cd /home/ubuntu/dnd/app\n",
+                      "docker build -t dnd-app .\n",
+                      "cd /home/ubuntu/dnd/admin\n",
+                      "docker build -t dnd-adminapp .\n"
+                    ]
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "Properties": {
+        "InstanceType": {
+          "Ref": "InstanceType"
+        },
+        "ImageId": {
+          "Fn::FindInMap": [
+            "AWSRegionArch2AMI",
+            {
+              "Ref": "AWS::Region"
+            },
+            {
+              "Fn::FindInMap": [
+                "AWSInstanceType2Arch",
+                {
+                  "Ref": "InstanceType"
+                },
+                "Arch"
+              ]
+            }
+          ]
+        },
+        "KeyName": {
+          "Ref": "KeyName"
+        },
+        "NetworkInterfaces": [
+          {
+            "GroupSet": [
+              {
+                "Ref": "WebServerSecurityGroup"
+              }
+            ],
+            "AssociatePublicIpAddress": "true",
+            "DeviceIndex": "0",
+            "DeleteOnTermination": "true",
+            "SubnetId": {
+              "Ref": "PublicSubnet"
+            }
+          }
+        ],
+        "UserData": {
+          "Fn::Base64": {
+            "Fn::Join": [
+              "",
+              [
+                "#!/bin/bash -xe\n",
+                "apt-get -y update\n",
+                "apt-get install -y python-setuptools python-pip\n",
+                "pip install requests\n",
+                "pip install argparse\n",
+                "mkdir -p /opt/aws/bin\n",
+                "pip install https://s3.amazonaws.com/cloudformation-examples/aws-cfn-bootstrap-latest.tar.gz\n",
+                "# Install the files and packages from the metadata\n",
+                "/usr/local/bin/cfn-init -v ",
+                "         --stack ",
+                {
+                  "Ref": "AWS::StackName"
+                },
+                "         --resource WebServerInstance ",
+                "         --configsets All ",
+                "         --region ",
+                {
+                  "Ref": "AWS::Region"
+                },
+                "\n",
+                "# Signal the status from cfn-init\n",
+                "/usr/local/bin/cfn-signal -e $? ",
+                "         --stack ",
+                {
+                  "Ref": "AWS::StackName"
+                },
+                "         --resource WebServerInstance ",
+                "         --region ",
+                {
+                  "Ref": "AWS::Region"
+                },
+                "\n"
+              ]
+            ]
+          }
+        }
+      },
+      "CreationPolicy": {
+        "ResourceSignal": {
+          "Timeout": "PT5M"
+        }
+      }
+    },
+    "Outputs": {
+      "URL": {
+        "Value": {
+          "Fn::Join": [
+            "",
+            [
+              "http://",
+              {
+                "Fn::GetAtt": [
+                  "WebServerInstance",
+                  "PublicIp"
+                ]
+              }
+            ]
+          ]
+        },
+        "Description": "Newly created application URL"
+      }
+    },
+    "Metadata": {
+      "AWS::CloudFormation::Designer": {
+        "a166c4f5-7cc4-429b-b9d8-2c8c43facc63": {
+          "size": {
+            "width": 60,
+            "height": 60
+          },
+          "position": {
+            "x": -40,
+            "y": 210
+          },
+          "z": 1,
+          "embeds": []
+        },
+        "96a791f0-938b-4ebe-9f3c-b3fe2a588aee": {
+          "size": {
+            "width": 320,
+            "height": 250
+          },
+          "position": {
+            "x": 70,
+            "y": 190
+          },
+          "z": 1,
+          "embeds": [
+            "2e76192b-a4f8-48a5-92b6-abbfa8b83263",
+            "175bad80-0988-4588-a919-331be705b02d"
+          ]
+        },
+        "2e76192b-a4f8-48a5-92b6-abbfa8b83263": {
+          "size": {
+            "width": 60,
+            "height": 60
+          },
+          "position": {
+            "x": 280,
+            "y": 370
+          },
+          "z": 2,
+          "parent": "96a791f0-938b-4ebe-9f3c-b3fe2a588aee",
+          "embeds": []
+        },
+        "175bad80-0988-4588-a919-331be705b02d": {
+          "size": {
+            "width": 120,
+            "height": 120
+          },
+          "position": {
+            "x": 90,
+            "y": 230
+          },
+          "z": 2,
+          "parent": "96a791f0-938b-4ebe-9f3c-b3fe2a588aee",
+          "embeds": [
+            "143bbaa1-66a2-42a5-885f-e6300817103c"
+          ]
+        },
+        "1790ebeb-2e41-4293-8cc1-aaba134fd1e0": {
+          "source": {
+            "id": "a166c4f5-7cc4-429b-b9d8-2c8c43facc63"
+          },
+          "target": {
+            "id": "96a791f0-938b-4ebe-9f3c-b3fe2a588aee"
+          },
+          "z": 1
+        },
+        "143bbaa1-66a2-42a5-885f-e6300817103c": {
+          "size": {
+            "width": 60,
+            "height": 60
+          },
+          "position": {
+            "x": 120,
+            "y": 260
+          },
+          "z": 3,
+          "parent": "175bad80-0988-4588-a919-331be705b02d",
+          "embeds": [],
+          "references": [
+            "a166c4f5-7cc4-429b-b9d8-2c8c43facc63"
+          ],
+          "dependson": [
+            "1790ebeb-2e41-4293-8cc1-aaba134fd1e0"
+          ],
+          "isrelatedto": [
+            "a166c4f5-7cc4-429b-b9d8-2c8c43facc63"
+          ]
+        },
+        "3df467ad-673c-4c48-a41c-3ac1626961e3": {
+          "size": {
+            "width": 120,
+            "height": 120
+          },
+          "position": {
+            "x": 250,
+            "y": 230
+          },
+          "z": 0,
+          "embeds": [
+            "0f900c9e-1272-4ec2-8a42-790b074baa39"
+          ]
+        },
+        "0f900c9e-1272-4ec2-8a42-790b074baa39": {
+          "size": {
+            "width": 60,
+            "height": 60
+          },
+          "position": {
+            "x": 280,
+            "y": 260
+          },
+          "z": 3,
+          "parent": "3df467ad-673c-4c48-a41c-3ac1626961e3",
+          "embeds": [],
+          "isrelatedto": [
+            "2e76192b-a4f8-48a5-92b6-abbfa8b83263"
+          ]
+        },
+        "13e0e0da-40c9-45d0-8460-7732ed20d764": {
+          "source": {
+            "id": "96a791f0-938b-4ebe-9f3c-b3fe2a588aee"
+          },
+          "target": {
+            "id": "3df467ad-673c-4c48-a41c-3ac1626961e3"
+          },
+          "z": 2
+        },
+        "528e2b71-46e6-4e09-815a-f70630755219": {
+          "source": {
+            "id": "175bad80-0988-4588-a919-331be705b02d"
+          },
+          "target": {
+            "id": "3df467ad-673c-4c48-a41c-3ac1626961e3"
+          },
+          "z": 2
+        }
+      }
+    }
+  }
+}

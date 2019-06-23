@@ -1,0 +1,18 @@
+[
+  {
+    "ParameterKey": "KeyName",
+    "ParameterValue": "DnD-server-key-pair"
+  },
+  {
+    "ParameterKey": "OSMDBName",
+    "ParameterValue": "osm"
+  },
+  {
+    "ParameterKey": "OSMUserName",
+    "ParameterValue": "osm"
+  },
+  {
+    "ParameterKey": "OSMRegion",
+    "ParameterValue": "europe/italy/north-east"
+  }
+]

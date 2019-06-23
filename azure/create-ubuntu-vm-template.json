@@ -2,10 +2,16 @@
     "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
     "contentVersion": "1.0.0.0",
     "parameters": {
-        "computerName": {
+        "TileServerComputerName": {
             "type": "string",
             "metadata": {
-                "description": "Virtual Machine name."
+                "description": "Database Server Virtual Machine name."
+            }
+        },
+        "PostGISComputerName": {
+            "type": "string",
+            "metadata": {
+                "description": "Database Server Virtual Machine name."
             }
         },
         "adminUsername": {
@@ -206,7 +212,7 @@
         {
             "apiVersion": "2016-04-30-preview",
             "type": "Microsoft.Compute/virtualMachines",
-            "name": "[parameters('computerName')]",
+            "name": "[parameters('PostGISComputerName')]",
             "location": "[parameters('location')]",
             "dependsOn": [
                 "[resourceId('Microsoft.Storage/storageAccounts/', variables('storageAccountName'))]",
@@ -217,7 +223,7 @@
                     "vmSize": "[variables('vmSize')]"
                 },
                 "osProfile": {
-                    "computerName": "[parameters('computerName')]",
+                    "computerName": "[parameters('PostGISComputerName')]",
                     "adminUsername": "[parameters('adminUsername')]",
                     "adminPassword": "[parameters('adminPasswordOrKey')]",
                     "linuxConfiguration": "[if(equals(parameters('authenticationType'), 'password'), json('null'), variables('linuxConfiguration'))]"
@@ -262,7 +268,7 @@
                     "name": "config-app",
                     "location": "[resourceGroup().location]",
                     "dependsOn": [
-                        "[concat('Microsoft.Compute/virtualMachines/', concat(parameters('computerName')))]"
+                        "[concat('Microsoft.Compute/virtualMachines/', concat(parameters('PostGISComputerName')))]"
                     ],
                     "tags": {
                         "displayName": "config-app"
@@ -274,11 +280,11 @@
                         "autoUpgradeMinorVersion": true,
                         "settings": {
                             "fileUris": [
-                                "https://raw.githubusercontent.com/jojoblaze/my-osm/master/install-osm.sh"
+                                "https://raw.githubusercontent.com/jojoblaze/my-osm/master/install-postgresql-gis.sh"
                             ]
                         },
                         "protectedSettings": {
-                            "commandToExecute": "[concat('sudo sh install-osm.sh ',variables('osmUserName'), ' ',variables('osmRegion'), ' ')]"
+                            "commandToExecute": "[concat('sudo sh install-postgresql-gis.sh ',variables('osmUserName'), ' ',variables('osmRegion'), ' ')]"
                         }
                     }
                 }

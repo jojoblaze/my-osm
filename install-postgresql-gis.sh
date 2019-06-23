@@ -3,89 +3,8 @@ OSMUserName=$1
 OSMRegion=$2
 
 
-MapDataUri=http://download.geofabrik.de
-
-AfricaMapFileName=africa-latest.osm.pbf
-AntarcticaMapFileName=antarctica-latest.osm.pbf
-AsiaMapFileName=asia-latest.osm.pbf
-AustraliaMapFileName=australia-oceania-latest.osm.pbf
-EuropeMapFileName=europe-latest.osm.pbf
-CentralAmericaMapFileName=central-america-latest.osm.pbf
-NorthAmericaMapFileName=north-america-latest.osm.pbf
-SouthAmericaMapFileName=south-america-latest.osm.pbf
-
-# *** Europe ***
-MapDataUriEurope=https://download.geofabrik.de/europe
-ItalyMapFileName=italy-latest.osm.pbf
-
-# *** Italy ***
-MapDataUriItaly=https://download.geofabrik.de/europe/italy
-ItalyNorthWestMapFileName=nord-ovest-latest.osm.pbf
-ItalyNorthEastMapFileName=nord-est.html
-ItalyCenterMapFileName=centro-latest.osm.pbf
-ItalySouthMapFileName=sud-latest.osm.pbf
-ItalyIslandsMapFileName=isole-latest.osm.pbf
-
-case $OSMRegion in
-    africa)
-        MapDataFileName=$AfricaMapFileName
-        ;;
-    antarctica)
-        MapDataFileName=$AntarcticaMapFileName
-        ;;
-    asia)
-        MapDataFileName=$AsiaMapFileName
-        ;;
-    australia-oceania)
-        MapDataFileName=$AustraliaMapFileName
-        ;;
-    north-america)
-        MapDataFileName=$NorthAmericaMapFileName
-        ;;
-    central-america)
-        MapDataFileName=$CentralAmericaMapFileName
-        ;;
-    south-america)
-        MapDataFileName=$SouthAmericaMapFileName
-        ;;
-    europe)
-        MapDataFileName=$EuropeMapFileName
-        ;;
-    europe/italy)
-        MapDataFileName=$ItalyMapFileName
-        MapDataUri=$MapDataUriEurope
-        ;;
-    europe/italy/north-west)
-        MapDataFileName=$ItalyNorthWestMapFileName
-        MapDataUri=$MapDataUriItaly
-        ;;
-    europe/italy/north-east)
-        MapDataFileName=$ItalyNorthEastMapFileName
-        MapDataUri=$MapDataUriItaly
-        ;;
-    europe/italy/center)
-        MapDataFileName=$ItalyCenterMapFileName
-        MapDataUri=$MapDataUriItaly
-        ;;
-    europe/italy/south)
-        MapDataFileName=$ItalySouthMapFileName
-        MapDataUri=$MapDataUriItaly
-        ;;
-    europe/italy/islands)
-        MapDataFileName=$ItalyIslandsMapFileName
-        MapDataUri=$MapDataUriItaly
-        ;;
-	*)
-		echo "@@@ Unkown country or territory @@@"
-        exit
-		;;
-esac
-
 
 WORKING_DIR=$(pwd)
-
-
-echo '@@@ using user: '$(whoami)' current directory: '$(WORKING_DIR)
 
 
 
@@ -100,25 +19,9 @@ export DEBIAN_FRONTEND=noninteractive
 
 
 
-# *** Step 1 - Install dependencies ***
-echo '*************************************'
-echo '*** Step 1 - Install dependencies ***'
-echo '*************************************'
-sudo apt-get install -y libboost-all-dev git-core tar unzip wget bzip2 build-essential autoconf libtool libxml2-dev libgeos-dev libgeos++-dev libpq-dev libbz2-dev libproj-dev munin-node munin libprotobuf-c0-dev protobuf-c-compiler libfreetype6-dev libtiff5-dev libicu-dev libgdal-dev libcairo-dev libcairomm-1.0-dev apache2 libagg-dev liblua5.2-dev ttf-unifont lua5.1 liblua5.1-dev libgeotiff-epsg curl
-
-if [[ $? > 0 ]]
-then
-    echo "The command failed, exiting."
-    exit
-else
-    echo "The command ran succesfuly, continuing with script."
-fi
-
-
-
-# *** Step 2 - Install PostgreSQL Database Server with PostGIS ***
+# *** Step 1 - Install PostgreSQL Database Server with PostGIS ***
 echo '****************************************************************'
-echo '*** Step 2 - Install PostgreSQL Database Server with PostGIS ***'
+echo '*** Step 1 - Install PostgreSQL Database Server with PostGIS ***'
 echo '****************************************************************'
 sudo apt-get install -y postgresql postgresql-contrib postgis postgresql-10-postgis-2.4 postgresql-10-postgis-scripts
 
@@ -257,17 +160,19 @@ OSMUserHome=/home/$OSMUserName/
 
 
 
-# *** Step 3: Installing osm2pgsql ***
+# *** Step 2: Installing osm2pgsql ***
 echo '************************************'
 echo '*** Step 3: Installing osm2pgsql ***'
 echo '************************************'
+
+cd ~
 mkdir ~/src
 cd ~/src
 git clone git://github.com/openstreetmap/osm2pgsql.git
 cd osm2pgsql
 
 echo 'Installing osm2pgsql dependecies...'
-sudo apt-get install -y make cmake g++ libboost-dev libboost-system-dev libboost-filesystem-dev libexpat1-dev zlib1g-dev libbz2-dev libpq-dev libproj-dev lua5.2 liblua5.2-dev
+apt-get install -y make cmake g++ libboost-dev libboost-system-dev libboost-filesystem-dev libexpat1-dev zlib1g-dev libbz2-dev libpq-dev libproj-dev lua5.2 liblua5.2-dev
 
 if [[ $? > 0 ]]
 then
@@ -284,7 +189,7 @@ cmake ..
 
 make
 
-sudo make install
+make install
 
 
 if [[ $? > 0 ]]
@@ -296,169 +201,15 @@ else
 fi
 
 
-# *** Step 4: Installing Mapnik ***
-echo '************************************'
-echo '*** Step 4: Installing Mapnik ***'
-echo '************************************'
 
-echo 'Installing Mapnik dependecies...'
-sudo apt-get install -y apache2-dev libtool libxml2-dev libbz2-dev libgeos-dev libgeos++-dev libproj-dev gdal-bin libmapnik-dev mapnik-utils python-mapnik
-
-if [[ $? > 0 ]]
-then
-    echo "The command failed, exiting."
-    exit
-else
-    echo "The command ran succesfuly, continuing with script."
-fi
-
-echo '@@@ Testing python mapnik...'
-python -c "import mapnik"
-
-if [[ $? > 0 ]]
-then
-    echo "The command failed, exiting."
-    exit
-else
-    echo "The command ran succesfuly, continuing with script."
-fi
-
-
-# *** Step 5: Install mod_tile ***
-echo '********************************'
-echo '*** Step 5: Install mod_tile ***'
-echo '********************************'
-# mod_tile is an Apache module that is required to serve tiles. Currently no binary package is available for Ubuntu. We can compile it from Github repository.
-echo '@@@ using user: '$(whoami)' current directory: '$(pwd)
-
-cd ~/src
-echo '* cloning mod_tile from GitHub *'
-git clone -b switch2osm git://github.com/SomeoneElseOSM/mod_tile.git
-cd mod_tile
-echo '@@@ Running autogen...'
-./autogen.sh
-
-if [[ $? > 0 ]]
-then
-    echo "The command failed, exiting."
-    exit
-else
-    echo "The command ran succesfuly, continuing with script."
-fi
-
-echo 'Running configure...'
-# ./configure
-autoheader \
-    && aclocal \
-    && libtoolize --ltdl --copy --force \
-    && automake --add-missing --copy \
-    && ./autogen.sh \
-    && ./configure
-
-if [[ $? > 0 ]]
-then
-    echo "The command failed, exiting."
-    exit
-else
-    echo "The command ran succesfuly, continuing with script."
-fi
-
-
-echo 'Running make...'
-make
-
-if [[ $? > 0 ]]
-then
-    echo "The command failed, exiting."
-    exit
-else
-    echo "The command ran succesfuly, continuing with script."
-fi
-
-echo 'Running make install...'
-sudo make install
-
-if [[ $? > 0 ]]
-then
-    echo "The command failed, exiting."
-    exit
-else
-    echo "The command ran succesfuly, continuing with script."
-fi
-
-echo 'Running make install-mod_tile...'
-sudo make install-mod_tile
-
-if [[ $? > 0 ]]
-then
-    echo "The command failed, exiting."
-    exit
-else
-    echo "The command ran succesfuly, continuing with script."
-fi
-
-sudo ldconfig
-
-
-
-
-
-# *** Step 6: Stylesheet configuration ***
-echo '********************************'
-echo '*** Stylesheet configuration ***'
-echo '********************************'
-
-sudo apt-get install -y npm nodejs
-
-if [[ $? > 0 ]]
-then
-    echo "The command failed, exiting."
-    exit
-else
-    echo "The command ran succesfuly, continuing with script."
-fi
-
-
-
-# # * check mapnik version *
-# MAPNIK_EXPECTED_VERSION="3.0.19"
-# if [ $(mapnik-config -v) != $MAPNIK_EXPECTED_VERSION ]
-# then
-#     echo 'ASSERT FAILED: expected mapnik version '$MAPNIK_EXPECTED_VERSION >>/dev/stderr
-# fi
-
-sudo npm install -g carto
-
-if [[ $? > 0 ]]
-then
-    echo "The command failed, exiting."
-    exit
-else
-    echo "The command ran succesfuly, continuing with script."
-fi
-
-cd ~/src
-# wget https://github.com/gravitystorm/openstreetmap-carto/archive/v4.21.1.tar.gz
-# tar xvf v4.21.1.tar.gz
-# rm v4.21.1.tar.gz
-git clone git://github.com/gravitystorm/openstreetmap-carto.git
-cd openstreetmap-carto
-
-echo '@@@ carto -v: $(carto -v)'
-
-carto project.mml > mapnik.xml
-
-
-
-
-
-# *** Step 7: Download Map Data ***
+# *** Step 3: Download Map Data ***
 echo '*********************************'
 echo '*** Step 7: Download Map Data ***'
 echo '*********************************'
 echo '(downloading from '$MapDataUri/$MapDataFileName')'
 # sudo su - $OSMUserName
 
+cd ~
 mkdir ~/data
 cd ~/data
 wget -c $MapDataUri/$MapDataFileName
