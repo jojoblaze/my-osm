@@ -2,22 +2,28 @@
     "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
     "contentVersion": "1.0.0.0",
     "parameters": {
-        "TileServerComputerName": {
-            "type": "string",
-            "metadata": {
-                "description": "Database Server Virtual Machine name."
-            }
-        },
-        "PostGISComputerName": {
-            "type": "string",
-            "metadata": {
-                "description": "Database Server Virtual Machine name."
-            }
-        },
         "adminUsername": {
             "type": "string",
             "metadata": {
                 "description": "User name for the Virtual Machine."
+            }
+        },
+        "PostGISDBServerName": {
+            "type": "string",
+            "metadata": {
+                "description": "Database Server Virtual Machine name."
+            }
+        },
+        "osmDBUserName": {
+            "type": "string",
+            "metadata": {
+                "description": "PostgreSQL user name."
+            }
+        },
+        "osmDBPassword": {
+            "type": "string",
+            "metadata": {
+                "description": "OSM user password."
             }
         },
         "authenticationType": {
@@ -96,7 +102,6 @@
         },
         "subnetRef": "[resourceId('Microsoft.Network/virtualNetworks/subnets', variables('virtualNetworkName'), variables('subnetName'))]",
         "networkSecurityGroup": "mySecurityGroup",
-        "osmUserName": "osm",
         "osmRegion": "europe/italy/north-west"
     },
     "functions": [],
@@ -132,6 +137,20 @@
                             "protocol": "Tcp",
                             "sourcePortRange": "*",
                             "destinationPortRange": "22",
+                            "sourceAddressPrefix": "*",
+                            "destinationAddressPrefix": "*",
+                            "access": "Allow",
+                            "priority": 200,
+                            "direction": "Inbound"
+                        }
+                    },
+                    {
+                        "name": "PostgreSQL",
+                        "properties": {
+                            "description": "PostgreSQL",
+                            "protocol": "Tcp",
+                            "sourcePortRange": "*",
+                            "destinationPortRange": "5432",
                             "sourceAddressPrefix": "*",
                             "destinationAddressPrefix": "*",
                             "access": "Allow",
@@ -212,7 +231,7 @@
         {
             "apiVersion": "2016-04-30-preview",
             "type": "Microsoft.Compute/virtualMachines",
-            "name": "[parameters('PostGISComputerName')]",
+            "name": "[parameters('PostGISDBServerName')]",
             "location": "[parameters('location')]",
             "dependsOn": [
                 "[resourceId('Microsoft.Storage/storageAccounts/', variables('storageAccountName'))]",
@@ -223,7 +242,7 @@
                     "vmSize": "[variables('vmSize')]"
                 },
                 "osProfile": {
-                    "computerName": "[parameters('PostGISComputerName')]",
+                    "computerName": "[parameters('PostGISDBServerName')]",
                     "adminUsername": "[parameters('adminUsername')]",
                     "adminPassword": "[parameters('adminPasswordOrKey')]",
                     "linuxConfiguration": "[if(equals(parameters('authenticationType'), 'password'), json('null'), variables('linuxConfiguration'))]"
@@ -268,7 +287,7 @@
                     "name": "config-app",
                     "location": "[resourceGroup().location]",
                     "dependsOn": [
-                        "[concat('Microsoft.Compute/virtualMachines/', concat(parameters('PostGISComputerName')))]"
+                        "[concat('Microsoft.Compute/virtualMachines/', concat(parameters('PostGISDBServerName')))]"
                     ],
                     "tags": {
                         "displayName": "config-app"
@@ -284,7 +303,7 @@
                             ]
                         },
                         "protectedSettings": {
-                            "commandToExecute": "[concat('sudo sh install-postgresql-gis.sh ',variables('osmUserName'), ' ',variables('osmRegion'), ' ')]"
+                            "commandToExecute": "[concat('sudo sh install-postgresql-gis.sh ',parameters('osmDBUserName'), ' ',parameters('osmDBPassword'), ' ', variables('osmRegion'), ' ')]"
                         }
                     }
                 }

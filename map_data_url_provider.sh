@@ -24,10 +24,10 @@ function usage() {
     exit 1
 }
 
-if [ $# -le 1 ]; then
-    usage
-    exit 1
-fi
+# if [ $# -le 1 ]; then
+#     usage
+#     exit 1
+# fi
 
 MapDataUri=http://download.geofabrik.de
 
