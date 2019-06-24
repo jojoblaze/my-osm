@@ -299,11 +299,12 @@
                         "autoUpgradeMinorVersion": true,
                         "settings": {
                             "fileUris": [
-                                "https://raw.githubusercontent.com/jojoblaze/my-osm/master/install-postgresql-gis.sh"
+                                "https://raw.githubusercontent.com/jojoblaze/my-osm/master/install-postgresql-gis.sh",
+                                "https://raw.githubusercontent.com/jojoblaze/my-osm/master/install-osm-tile-server.sh"
                             ]
                         },
                         "protectedSettings": {
-                            "commandToExecute": "[concat('sudo sh install-postgresql-gis.sh ',parameters('osmDBUserName'), ' ',parameters('osmDBPassword'), ' ', variables('osmRegion'), ' ')]"
+                            "commandToExecute": "[concat('sudo sh install-postgresql-gis.sh ',parameters('osmDBUserName'), ' ',parameters('osmDBPassword'), ' ', variables('osmRegion'), ' ', ' && sudo sh install-osm-tile-server.sh ', parameters('osmDBUserName'))]"
                         }
                     }
                 }
