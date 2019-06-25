@@ -83,19 +83,24 @@ esac
 
 WORKING_DIR=$(pwd)
 
-# *** Step 0 - Prepare system ***
-echo '*******************************'
-echo '*** Step 0 - Prepare system ***'
-echo '*******************************'
-#sudo apt-get update -y
+# *** Prepare system ***
+echo '**********************'
+echo '*** Prepare system ***'
+echo '**********************'
+
+echo 'Updating the system'
+sudo apt-get update -y --fix-missing
 #sudo apt-get upgrade -y
+
 echo '* Setting Frontend as Non-Interactive *'
 export DEBIAN_FRONTEND=noninteractive
 
-# *** Step 1 - Install PostgreSQL Database Server with PostGIS ***
-echo '****************************************************************'
-echo '*** Step 1 - Install PostgreSQL Database Server with PostGIS ***'
-echo '****************************************************************'
+
+
+# *** Install PostgreSQL Database Server with PostGIS ***
+echo '*******************************************************'
+echo '*** Install PostgreSQL Database Server with PostGIS ***'
+echo '*******************************************************'
 sudo apt-get install -y postgresql postgresql-contrib postgis postgresql-10-postgis-2.4 postgresql-10-postgis-scripts
 
 if [[ $? > 0 ]]; then
@@ -155,10 +160,10 @@ fi
 
 
 
-# *** Step 2 - PostgreSQL configuration ***
-echo '****************************************************************'
-echo '*** Step 2 - PostgreSQL configuration ***'
-echo '****************************************************************'
+# *** PostgreSQL configuration ***
+echo '********************************'
+echo '*** PostgreSQL configuration ***'
+echo '********************************'
 
 # Changing PostgreSQL authentication mode
 echo 'Set PostgreSQL authentication mode to "trust" for local connections'
@@ -192,10 +197,12 @@ else
     echo "The command ran succesfuly, continuing with script."
 fi
 
-# *** Step 3: Installing osm2pgsql ***
-echo '************************************'
-echo '*** Step 3: Installing osm2pgsql ***'
-echo '************************************'
+
+
+# *** Installing osm2pgsql ***
+echo '****************************'
+echo '*** Installing osm2pgsql ***'
+echo '****************************'
 
 cd ~
 mkdir ~/src
@@ -228,10 +235,12 @@ else
     echo "The command ran succesfuly, continuing with script."
 fi
 
-# *** Step 4: Download Map Data ***
-echo '*********************************'
-echo '*** Step 4: Download Map Data ***'
-echo '*********************************'
+
+
+# *** Download Map Data ***
+echo '*************************'
+echo '*** Download Map Data ***'
+echo '*************************'
 echo '(downloading from '$MapDataUri/$MapDataFileName')'
 # sudo su - $OSMUserName
 
@@ -253,21 +262,24 @@ wget -c $MapDataUri/$MapDataFileName
 # And paste the following text at the end of the file.
 # ServerAliveInterval 60
 
-# *** Step 5: Import the Map Data to PostgreSQL ***
-echo '*************************************************'
-echo '*** Step 5: Import the Map Data to PostgreSQL ***'
-echo '*************************************************'
+
+
+# *** Import the Map Data to PostgreSQL ***
+echo '*****************************************'
+echo '*** Import the Map Data to PostgreSQL ***'
+echo '*****************************************'
 
 echo '* running osm2pgsql *'
-
 # osm2pgsql -U postgres --slim -d gis -C 1800 --hstore --create -G --number-processes 1 ~/data/$MapDataFileName
 osm2pgsql -U $OSMUserName --slim -d gis -C 1800 --hstore --create -G --number-processes 1 ~/data/$MapDataFileName
 
 # osm2pgsql -U postgres --slim -d gis -C 1800 --hstore -S ~/src/openstreetmap-carto/openstreetmap-carto.style --create -G --tag-transform-script ~/src/openstreetmap-carto/openstreetmap-carto.lua --number-processes 1  ~/data/$MapDataFileName
 
 
+echo '***************************************'
+echo '*** Granting all privileges to user ***'
+echo '***************************************'
 
-echo 'Granting all privileges to ['$OSMUserName'] user'
 sudo -u postgres psql -c "GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO $OSMUserName;" -d gis
 
 

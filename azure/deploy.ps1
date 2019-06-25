@@ -100,5 +100,5 @@ else {
 Write-Host "Starting deployment...";
 
 New-AzureRmResourceGroupDeployment -ResourceGroupName $resourceGroupName `
-    -TemplateFile .\create-ubuntu-vm-template.json -TemplateParameterFile .\ubuntu-vm.parameters.json
+    -TemplateFile .\create-osm-vm-template.json -TemplateParameterFile .\osm-vm.parameters.json
 #-TemplateUri $templatePath -TemplateParameterUri $parametersPath

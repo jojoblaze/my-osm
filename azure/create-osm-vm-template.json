@@ -43,7 +43,25 @@
                 "description": "SSH Key or password for the Virtual Machine. SSH key is recommended."
             }
         },
-        "ubuntuOSVersion": {
+        "ImagePublisher": {
+            "type": "string",
+            "metadata": {
+                "description": "The OS Publisher."
+            }
+        },
+        "ImageOffer": {
+            "type": "string",
+            "metadata": {
+                "description": "The OS image offer."
+            }
+        },
+        "OSSKU": {
+            "type": "string",
+            "metadata": {
+                "description": "The sku of the OS image (i.e. Debian: 9, Ubuntu: 18.04-LTS)."
+            }
+        },
+        "OSVersion": {
             "type": "string",
             "defaultValue": "18.04-LTS",
             "allowedValues": [
@@ -77,8 +95,6 @@
     },
     "variables": {
         "storageAccountName": "[concat(uniquestring(resourceGroup().id), 'salinuxvm')]",
-        "imagePublisher": "Canonical",
-        "imageOffer": "UbuntuServer",
         "nicName": "myVMNic",
         "addressPrefix": "10.0.0.0/16",
         "subnetName": "Subnet",
@@ -248,10 +264,10 @@
                 },
                 "storageProfile": {
                     "imageReference": {
-                        "publisher": "[variables('imagePublisher')]",
-                        "offer": "[variables('imageOffer')]",
-                        "sku": "[parameters('ubuntuOSVersion')]",
-                        "version": "latest"
+                        "publisher": "[parameters('ImagePublisher')]",
+                        "offer": "[parameters('ImageOffer')]",
+                        "sku": "[parameters('OSSKU')]",
+                        "version": "[parameters('OSVersion')]"
                     },
                     "osDisk": {
                         "name": "myManagedOSDisk",
