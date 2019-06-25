@@ -3,13 +3,13 @@
   "contentVersion": "1.0.0.0",
   "parameters": {
     "ImagePublisher": {
-      "value": "credativ"
+      "value": "Canonical"
     },
     "ImageOffer": {
-      "value": "Debian"
+      "value": "UbuntuServer"
     },
     "OSSKU": {
-      "value": "9"
+      "value": "18.04-LTS"
     },
     "OSVersion": {
       "value": "latest"
@@ -21,13 +21,13 @@
       "value": "ubuntu"
     },
     "adminPasswordOrKey": {
-      "value": "UbuntuAzure12345678"
+      "value": "Azure1234567890"
     },
     "authenticationType": {
       "value": "password"
     },
     "PostGISDBServerName": {
-      "value": "osm-postgis-db-Ubuntu"
+      "value": "osm-postgis-db"
     },
     "osmDBUserName": {
       "value": "osm"

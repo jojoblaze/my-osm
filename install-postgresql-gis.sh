@@ -129,34 +129,13 @@ sudo -u postgres psql -c "ALTER USER $OSMUserName WITH PASSWORD '$OSMDBPassword'
 echo 'Creating PostgreSQL gis database'
 sudo -u postgres createdb -E UTF8 -O $OSMUserName gis
 
-if [[ $? > 0 ]]; then
-    echo "The command failed, exiting."
-    exit
-else
-    echo "The command ran succesfuly, continuing with script."
-fi
-
 echo 'Creating hstore extension on the gis database'
 sudo -u postgres psql -c "CREATE EXTENSION hstore;" -d gis
 
-if [[ $? > 0 ]]; then
-    echo "The command failed, exiting."
-    exit
-else
-    echo "The command ran succesfuly, continuing with script."
-fi
-
 echo 'Creating postgis extension on gis database'
-command="CREATE EXTENSION postgis;"
-echo 'PostgreSQL - Executing command:'$postgis_command
-sudo -u postgres psql -c $command -d gis
+sudo -u postgres psql -c "CREATE EXTENSION postgis;" -d gis
 
-if [[ $? > 0 ]]; then
-    echo "The command failed, exiting."
-    exit
-else
-    echo "The command ran succesfuly, continuing with script."
-fi
+
 
 
 
