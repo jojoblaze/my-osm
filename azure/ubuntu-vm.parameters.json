@@ -19,6 +19,15 @@
     },
     "osmDBPassword": {
       "value": "magellano123"
+    },
+    "ubuntuOSVersion": {
+      "value": "18.04-LTS"
+    },
+    "virtualMachineSize": {
+      "value": "Standard_A2"
+    },
+    "location": {
+      "value": "[resourceGroup().location]"
     }
   }
 }
