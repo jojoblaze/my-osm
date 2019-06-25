@@ -95,8 +95,6 @@ sudo apt-get update -y --fix-missing
 echo '* Setting Frontend as Non-Interactive *'
 export DEBIAN_FRONTEND=noninteractive
 
-
-
 # *** Install PostgreSQL Database Server with PostGIS ***
 echo '*******************************************************'
 echo '*** Install PostgreSQL Database Server with PostGIS ***'
@@ -135,34 +133,36 @@ sudo -u postgres psql -c "CREATE EXTENSION hstore;" -d gis
 echo 'Creating postgis extension on gis database'
 sudo -u postgres psql -c "CREATE EXTENSION postgis;" -d gis
 
-
-
-
-
 # *** PostgreSQL configuration ***
 echo '********************************'
 echo '*** PostgreSQL configuration ***'
 echo '********************************'
 
-# Changing PostgreSQL authentication mode
-echo 'Set PostgreSQL authentication mode to "trust" for local connections'
-sudo sed -i "s/local   all             postgres                                peer/local   all             postgres                                trust/g" /etc/postgresql/10/main/pg_hba.conf
+PG_HBA_PATH='/etc/postgresql/10/main/pg_hba.conf'
 
-if [[ $? > 0 ]]; then
-    echo "The command failed, exiting."
-    exit
+if [[ ! -f $PG_HBA_PATH ]]; then
+    echo '$PG_HBA_PATH file not found'
 else
-    echo "The command ran succesfuly, continuing with script."
-fi
+    # Changing PostgreSQL authentication mode
+    echo 'Set PostgreSQL authentication mode to "trust" for local connections'
+    sudo sed -i "s/local   all             postgres                                peer/local   all             postgres                                trust/g" $PG_HBA_PATH
 
-echo 'Allow remote connection from any ip'
-sudo sed -i "s/host    all             all             127.0.0.1\/32            md5/host    all             all             0.0.0.0\/0               md5/g" /etc/postgresql/10/main/pg_hba.conf
+    if [[ $? > 0 ]]; then
+        echo "The command failed, exiting."
+        exit
+    else
+        echo "The command ran succesfuly, continuing with script."
+    fi
 
-if [[ $? > 0 ]]; then
-    echo "The command failed, exiting."
-    exit
-else
-    echo "The command ran succesfuly, continuing with script."
+    echo 'Allow remote connection from any ip'
+    sudo sed -i "s/host    all             all             127.0.0.1\/32            md5/host    all             all             0.0.0.0\/0               md5/g" $PG_HBA_PATH
+
+    if [[ $? > 0 ]]; then
+        echo "The command failed, exiting."
+        exit
+    else
+        echo "The command ran succesfuly, continuing with script."
+    fi
 fi
 
 # restarting postgres
@@ -170,11 +170,21 @@ echo '* restarting postgres *'
 sudo service postgresql restart
 
 if [[ $? > 0 ]]; then
-    echo "The command failed, exiting."
+    echo "Some problem has occurred while restarting postgresql service, exiting."
     exit
 else
-    echo "The command ran succesfuly, continuing with script."
+    echo "postgresql service restarted successfully."
 fi
+
+
+
+echo '*****************************'
+echo '*** Creating service user ***'
+echo '*****************************'
+# Create osm user on your operating system so the tile server can run as osm user.
+echo '* creating operating system user ['$OSMUserName'] *'
+#sudo adduser $OSMUserName --disabled-password --shell /bin/bash --gecos ""
+sudo useradd -m $OSMUserName
 
 
 
@@ -214,8 +224,6 @@ else
     echo "The command ran succesfuly, continuing with script."
 fi
 
-
-
 # *** Download Map Data ***
 echo '*************************'
 echo '*** Download Map Data ***'
@@ -241,26 +249,21 @@ wget -c $MapDataUri/$MapDataFileName
 # And paste the following text at the end of the file.
 # ServerAliveInterval 60
 
-
-
 # *** Import the Map Data to PostgreSQL ***
 echo '*****************************************'
 echo '*** Import the Map Data to PostgreSQL ***'
 echo '*****************************************'
 
 echo '* running osm2pgsql *'
-# osm2pgsql -U postgres --slim -d gis -C 1800 --hstore --create -G --number-processes 1 ~/data/$MapDataFileName
-osm2pgsql -U $OSMUserName --slim -d gis -C 1800 --hstore --create -G --number-processes 1 ~/data/$MapDataFileName
+osm2pgsql -U postgres --slim -d gis -C 1800 --hstore --create -G --number-processes 1 ~/data/$MapDataFileName
+# osm2pgsql -U $OSMUserName --slim -d gis -C 1800 --hstore --create -G --number-processes 1 ~/data/$MapDataFileName
 
 # osm2pgsql -U postgres --slim -d gis -C 1800 --hstore -S ~/src/openstreetmap-carto/openstreetmap-carto.style --create -G --tag-transform-script ~/src/openstreetmap-carto/openstreetmap-carto.lua --number-processes 1  ~/data/$MapDataFileName
-
 
 echo '***************************************'
 echo '*** Granting all privileges to user ***'
 echo '***************************************'
 
 sudo -u postgres psql -c "GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO $OSMUserName;" -d gis
-
-
 
 echo 'Congrats! You just successfully built your own OSM DB server.'

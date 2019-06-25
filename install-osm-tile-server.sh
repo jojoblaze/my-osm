@@ -171,7 +171,7 @@ echo '* replacing values in renderd.conf *'
 RENDERD_CONF_PATH='/usr/local/etc/renderd.conf'
 # RENDERD_CONF_PATH='/home/osm/src/mod_tile/debian/renderd.conf'
 
-if [[ -f $RENDERD_CONF_PATH ]]; then
+if [[ ! -f $RENDERD_CONF_PATH ]]; then
     echo 'File $RENDERD_CONF_PATH not found'
 else
 
