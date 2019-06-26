@@ -26,6 +26,12 @@
                 "description": "OSM user password."
             }
         },
+        "osmDBName": {
+            "type": "string",
+            "metadata": {
+                "description": "GIS OSM database name."
+            }
+        },
         "authenticationType": {
             "type": "string",
             "defaultValue": "sshPublicKey",
@@ -319,7 +325,7 @@
                             ]
                         },
                         "protectedSettings": {
-                            "commandToExecute": "[concat('sudo sh install-postgresql-gis.sh ',parameters('osmDBUserName'), ' ',parameters('osmDBPassword'), ' ', variables('osmRegion'), ' ')]"
+                            "commandToExecute": "[concat('sudo sh install-postgresql-10.sh ',parameters('osmDBUserName'), ' ',parameters('osmDBPassword'), ' ', 'sudo sh install-postgresql-gis.sh ',parameters('osmDBUserName'), ' ',parameters('osmDBPassword'), ' ',parameters('osmDBName'), ' ', variables('osmRegion'), ' ', 'sudo sh install-osm-tile-server.sh ')]"
                         }
                     }
                 }

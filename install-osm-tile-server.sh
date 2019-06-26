@@ -1,6 +1,7 @@
 #!/bin/bash
 OSMUserName=$1
-OSMRegion=$2
+
+
 
 # *** Installing Mapnik ***
 echo '*************************'
@@ -18,7 +19,7 @@ else
 fi
 
 echo 'Installing Mapnik'
-sudo apt-get install autoconf apache2-dev libtool libxml2-dev libbz2-dev libgeos-dev libgeos++-dev libproj-dev gdal-bin libmapnik-dev mapnik-utils python-mapnik
+sudo apt-get install -y autoconf apache2-dev libtool libxml2-dev libbz2-dev libgeos-dev libgeos++-dev libproj-dev gdal-bin libmapnik-dev mapnik-utils python-mapnik
 
 echo '@@@ Testing python mapnik...'
 python -c "import mapnik"
@@ -30,11 +31,24 @@ else
     echo "The command ran succesfuly, continuing with script."
 fi
 
+
+
 # *** Install mod_tile ***
 echo '************************'
 echo '*** Install mod_tile ***'
 echo '************************'
 # mod_tile is an Apache module that is required to serve tiles. Currently no binary package is available for Ubuntu. We can compile it from Github repository.
+
+echo 'logging as $OSMUserName'
+sudo su - $OSMUserName
+
+echo 'current user: '$(whoami)
+cd ~
+echo 'current user home directory: '$(pwd)
+
+if [[ ! -d ~/src ]]; then
+    mkdir ~/src
+fi
 
 cd ~/src
 echo 'cloning mod_tile from GitHub *'
@@ -69,6 +83,10 @@ if [[ $? > 0 ]]; then
 else
     echo "The command ran succesfuly, continuing with script."
 fi
+
+sudo make renderd
+
+
 
 sudo make install
 
@@ -122,6 +140,7 @@ else
 fi
 
 cd ~/src
+
 # wget https://github.com/gravitystorm/openstreetmap-carto/archive/v4.21.1.tar.gz
 # tar xvf v4.21.1.tar.gz
 # rm v4.21.1.tar.gz
@@ -168,7 +187,9 @@ echo '****************************'
 echo '*** Configuring renderd ***'
 
 echo '* replacing values in renderd.conf *'
-RENDERD_CONF_PATH='/usr/local/etc/renderd.conf'
+
+RENDERD_CONF_PATH=~/src/mod_tile/renderd.conf
+# RENDERD_CONF_PATH='/usr/local/etc/renderd.conf'
 # RENDERD_CONF_PATH='/home/osm/src/mod_tile/debian/renderd.conf'
 
 if [[ ! -f $RENDERD_CONF_PATH ]]; then
@@ -176,7 +197,7 @@ if [[ ! -f $RENDERD_CONF_PATH ]]; then
 else
 
     echo 'Replacing the value of num_threads [default] section'
-    sudo sed -i "s/^num_threads=\d+/num_threads=2/g" $RENDERD_CONF_PATH
+    sudo sed -i "s/^num_threads=[0-9]+/num_threads=2/g" $RENDERD_CONF_PATH
 
     # In the [default] section, change the value of XML and HOST to
     # XML=/home/osm/openstreetmap-carto-2.41.0/style.xml
@@ -185,26 +206,13 @@ else
     # sudo sed -i "s/^XML=\/home\/jburgess\/osm\/svn.openstreetmap.org\/applications\/rendering\/mapnik\/osm-local.xml/XML=\/home\/osm\/openstreetmap-carto-4.21.1\/style.xml/g" $RENDERD_CONF_PATH
     # sudo sed -i "s/^XML=[\w+|\/+|-]+.xml/XML=\/home\/osm\/openstreetmap-carto-4.21.1\/style.xml/gmi" $RENDERD_CONF_PATH
 
-    style_path=$(echo ~/src/openstreetmap-carto/mapnik.xml | sed 's_/_\\/_g')
-    sudo sed -i 's/^XML=[\w+|\/+|\-]+.xml/XML='$style_path'/g' $RENDERD_CONF_PATH
+    # style_path=$(echo ~/src/openstreetmap-carto/mapnik.xml | sed 's_/_\\/_g')
+    # sudo sed -i 's/^XML=[\w+|\/+|\-]+.xml/XML='$style_path'/g' $RENDERD_CONF_PATH
 
-    # if [[ $? > 0 ]]
-    # then
-    #     echo "The command failed, exiting."
-    #     exit
-    # else
-    #     echo "The command ran succesfuly, continuing with script."
-    # fi
+    sudo sed -i 's/renderaccount/$OSMUserName/g' $RENDERD_CONF_PATH
 
-    echo 'Replacing the value of HOST [default] section'
-    sudo sed -i "s/^HOST=tile.openstreetmap.org/HOST=$HOSTNAME/g" $RENDERD_CONF_PATH
-
-    if [[ $? > 0 ]]; then
-        echo "The command failed, exiting."
-        exit
-    else
-        echo "The command ran succesfuly, continuing with script."
-    fi
+    # echo 'Replacing the value of HOST [default] section'
+    # sudo sed -i "s/^HOST=tile.openstreetmap.org/HOST=$HOSTNAME/g" $RENDERD_CONF_PATH
 
     # # Replacing the value of plugins_dir [mapnik] section
     # echo 'Replacing the value of plugins_dir [mapnik] section'
@@ -225,40 +233,24 @@ cd $WORKING_DIR
 # Install renderd init script by copying the sample init script.
 echo '* Install renderd init script by copying the sample init script *'
 
-sudo cp ~/src/mod_tile/debian/renderd.init /etc/init.d/renderd
-
-# Grant execute permission
-echo '* Grant execute permission *'
-sudo chmod a+x /etc/init.d/renderd
-
-echo '* replacing values in init.d/renderd *'
-# Change the following variable in /etc/init.d/renderd file
-sudo sed -i "s/DAEMON=\/usr\/bin\/\$NAME/DAEMON=\/usr\/local\/bin\/\$NAME/g" /etc/init.d/renderd
-
-if [[ $? > 0 ]]; then
-    echo "The command failed, exiting."
-    exit
+if [[ ! -f ~/src/mod_tile/debian/renderd.init ]]; then
+    echo 'file ~/src/mod_tile/debian/renderd.init not found'
 else
-    echo "The command ran succesfuly, continuing with script."
-fi
+    sudo cp ~/src/mod_tile/debian/renderd.init /etc/init.d/renderd
 
-# sudo sed -i "s/DAEMON_ARGS=\"\"/DAEMON_ARGS=\"-c \/usr\/local\/etc\/renderd.conf\"/g" /etc/init.d/renderd
-sudo sed -i "s/DAEMON_ARGS=\"\"/DAEMON_ARGS=\"-c \/home\/osm\/mod_tile\/debian\/renderd.conf\"/g" /etc/init.d/renderd
+    # Grant execute permission
+    echo '* Grant execute permission *'
+    sudo chmod a+x /etc/init.d/renderd
 
-if [[ $? > 0 ]]; then
-    echo "The command failed, exiting."
-    exit
-else
-    echo "The command ran succesfuly, continuing with script."
-fi
+    echo '* replacing values in init.d/renderd *'
+    # Change the following variable in /etc/init.d/renderd file
+    # sudo sed -i "s/DAEMON=\/usr\/bin\/\$NAME/DAEMON=\/usr\/local\/bin\/\$NAME/g" /etc/init.d/renderd
 
-sudo sed -i "s/RUNASUSER=www-data/RUNASUSER=$OSMUserName/g" /etc/init.d/renderd
 
-if [[ $? > 0 ]]; then
-    echo "The command failed, exiting."
-    exit
-else
-    echo "The command ran succesfuly, continuing with script."
+    sudo sed -i "s/DAEMON_ARGS=.*/DAEMON_ARGS=\"-c \/home\/osm\/src\/mod_tile\/renderd.conf\"/g" /etc/init.d/renderd
+
+    sudo sed -i "s/RUNASUSER=renderaccount/RUNASUSER=$OSMUserName/g" /etc/init.d/renderd
+
 fi
 
 # *** Configuring Apache ***
@@ -268,34 +260,16 @@ echo '**************************'
 
 sudo mkdir -p /var/lib/mod_tile
 
-if [[ $? > 0 ]]; then
-    echo "@@@ Unable to create /var/lib/mod_tile folder @@@"
-    exit
-else
-    echo "The command ran succesfuly, continuing with script."
-fi
 
-echo '@@@ changing permissions to folder'
+echo 'changing permissions to folder'
 sudo chown $OSMUserName /var/lib/mod_tile
 
-if [[ $? > 0 ]]; then
-    echo "The command failed, exiting."
-    exit
-else
-    echo "The command ran succesfuly, continuing with script."
-fi
 
-echo '@@@ creating /var/run/renderd folder...'
+echo 'creating /var/run/renderd folder...'
 sudo mkdir /var/run/renderd
 
-if [[ $? > 0 ]]; then
-    echo "@@@ Unable to create /var/run/renderd folder @@@"
-    exit
-else
-    echo "The command ran succesfuly, continuing with script."
-fi
 
-echo '@@@ changing permissions to folder'
+echo 'changing permissions to folder'
 sudo chown -R $OSMUserName /var/run/renderd
 
 echo "Create a module load file"

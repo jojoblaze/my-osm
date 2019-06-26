@@ -34,6 +34,9 @@
     },
     "osmDBPassword": {
       "value": "magellano123"
+    },
+    "osmDBName": {
+      "value": "gis"
     }
   }
 }
