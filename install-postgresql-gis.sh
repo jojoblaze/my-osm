@@ -1,8 +1,9 @@
 #!/bin/bash
 OSMUserName=$1
 OSMDBPassword=$2
-OSMRegion=$3
-OSMDatabaseName=$4
+OSMDatabaseName=$3
+OSMRegion=$4
+
 
 MapDataUri=http://download.geofabrik.de
 
