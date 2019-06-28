@@ -1,7 +1,7 @@
 #!/bin/bash
 OSMUserName=$1
 
-
+OSMUserHome=/home/$OSMUserName
 
 # *** Installing Mapnik ***
 echo '*************************'
@@ -10,6 +10,7 @@ echo '*************************'
 
 echo 'Installing Mapnik dependecies'
 sudo apt-get install -y libboost-all-dev git-core tar unzip wget bzip2 build-essential autoconf libtool libxml2-dev libgeos-dev libgeos++-dev libpq-dev libbz2-dev libproj-dev munin-node munin libprotobuf-c0-dev protobuf-c-compiler libfreetype6-dev libtiff5-dev libicu-dev libgdal-dev libcairo-dev libcairomm-1.0-dev apache2 apache2-dev libagg-dev liblua5.2-dev ttf-unifont lua5.1 liblua5.1-dev libgeotiff-epsg curl
+# sudo apt-get install -y libmapnik3.0 libmapnik-dev mapnik-utils python-mapnik autoconf apache2-dev
 
 if [[ $? > 0 ]]; then
     echo "The command failed, exiting."
@@ -37,23 +38,31 @@ fi
 echo '************************'
 echo '*** Install mod_tile ***'
 echo '************************'
-# mod_tile is an Apache module that is required to serve tiles. Currently no binary package is available for Ubuntu. We can compile it from Github repository.
+# mod_tile is an Apache module that is required to serve tiles. 
+# Currently no binary package is available for Ubuntu. 
+# We can compile it from Github repository.
 
-echo 'logging as $OSMUserName'
-sudo su - $OSMUserName
+# echo 'logging as ['$OSMUserName']'
+# sudo su - $OSMUserName
 
 echo 'current user: '$(whoami)
 cd ~
 echo 'current user home directory: '$(pwd)
 
-if [[ ! -d ~/src ]]; then
-    mkdir ~/src
+if [[ ! -d $OSMUserHome/src ]]; then
+    mkdir $OSMUserHome/src
+
+    # set OSM user owner
+    chown -R $OSMUserName:$OSMUserName $OSMUserHome/src
 fi
 
-cd ~/src
+cd $OSMUserHome/src
+
 echo 'cloning mod_tile from GitHub *'
 git clone -b switch2osm git://github.com/SomeoneElseOSM/mod_tile.git
 # git clone -b switch2osm git://github.com/SomeoneElseOSM/mod_tile.git
+
+chown $OSMUserName:$OSMUserName mod_tile
 cd mod_tile
 
 echo 'Running autogen'
@@ -86,7 +95,12 @@ fi
 
 sudo make renderd
 
-
+if [[ $? > 0 ]]; then
+    echo "The command failed, exiting."
+    exit
+else
+    echo "The command ran succesfuly, continuing with script."
+fi
 
 sudo make install
 
@@ -108,6 +122,8 @@ else
 fi
 
 sudo ldconfig
+
+
 
 # *** Stylesheet configuration ***
 echo '********************************'
@@ -139,15 +155,17 @@ else
     echo "The command ran succesfuly, continuing with script."
 fi
 
-cd ~/src
+cd $OSMUserHome/src
 
 # wget https://github.com/gravitystorm/openstreetmap-carto/archive/v4.21.1.tar.gz
 # tar xvf v4.21.1.tar.gz
 # rm v4.21.1.tar.gz
 git clone git://github.com/gravitystorm/openstreetmap-carto.git
+
+chown -R $OSMUserName:$OSMUserName openstreetmap-carto
 cd openstreetmap-carto
 
-echo '@@@ carto -v: $(carto -v)'
+echo 'carto -v: $(carto -v)'
 
 carto project.mml | tee mapnik.xml
 
@@ -156,7 +174,7 @@ echo '**************************'
 echo '*** Shapefile download ***'
 echo '**************************'
 
-cd ~/src/openstreetmap-carto/scripts
+cd $OSMUserHome/src/openstreetmap-carto/scripts
 
 echo '@@@ running get-shapefiles.py...'
 ./get-shapefiles.py
@@ -178,6 +196,8 @@ else
     echo "The command ran succesfuly, continuing with script."
 fi
 
+
+
 # *** Setting up webserver ***
 echo '****************************'
 echo '*** Setting up webserver ***'
@@ -193,7 +213,7 @@ RENDERD_CONF_PATH=~/src/mod_tile/renderd.conf
 # RENDERD_CONF_PATH='/home/osm/src/mod_tile/debian/renderd.conf'
 
 if [[ ! -f $RENDERD_CONF_PATH ]]; then
-    echo 'File $RENDERD_CONF_PATH not found'
+    echo "File $RENDERD_CONF_PATH not found"
 else
 
     echo 'Replacing the value of num_threads [default] section'
@@ -209,7 +229,7 @@ else
     # style_path=$(echo ~/src/openstreetmap-carto/mapnik.xml | sed 's_/_\\/_g')
     # sudo sed -i 's/^XML=[\w+|\/+|\-]+.xml/XML='$style_path'/g' $RENDERD_CONF_PATH
 
-    sudo sed -i 's/renderaccount/$OSMUserName/g' $RENDERD_CONF_PATH
+    sudo sed -i "s/renderaccount/$OSMUserName/g" $RENDERD_CONF_PATH
 
     # echo 'Replacing the value of HOST [default] section'
     # sudo sed -i "s/^HOST=tile.openstreetmap.org/HOST=$HOSTNAME/g" $RENDERD_CONF_PATH
@@ -228,21 +248,21 @@ else
 
 fi
 
-cd $WORKING_DIR
+
 
 # Install renderd init script by copying the sample init script.
 echo '* Install renderd init script by copying the sample init script *'
 
-if [[ ! -f ~/src/mod_tile/debian/renderd.init ]]; then
-    echo 'file ~/src/mod_tile/debian/renderd.init not found'
+if [[ ! -f $OSMUserHome/src/mod_tile/renderd.init ]]; then
+    echo "file $OSMUserHome/src/mod_tile/renderd.init not found"
 else
-    sudo cp ~/src/mod_tile/debian/renderd.init /etc/init.d/renderd
+    sudo cp $OSMUserHome/src/mod_tile/renderd.init /etc/init.d/renderd
 
     # Grant execute permission
     echo '* Grant execute permission *'
     sudo chmod a+x /etc/init.d/renderd
 
-    echo '* replacing values in init.d/renderd *'
+    echo 'replacing values in init.d/renderd'
     # Change the following variable in /etc/init.d/renderd file
     # sudo sed -i "s/DAEMON=\/usr\/bin\/\$NAME/DAEMON=\/usr\/local\/bin\/\$NAME/g" /etc/init.d/renderd
 
@@ -250,8 +270,9 @@ else
     sudo sed -i "s/DAEMON_ARGS=.*/DAEMON_ARGS=\"-c \/home\/osm\/src\/mod_tile\/renderd.conf\"/g" /etc/init.d/renderd
 
     sudo sed -i "s/RUNASUSER=renderaccount/RUNASUSER=$OSMUserName/g" /etc/init.d/renderd
-
 fi
+
+
 
 # *** Configuring Apache ***
 echo '**************************'
@@ -262,7 +283,7 @@ sudo mkdir -p /var/lib/mod_tile
 
 
 echo 'changing permissions to folder'
-sudo chown $OSMUserName /var/lib/mod_tile
+sudo chown -R $OSMUserName /var/lib/mod_tile
 
 
 echo 'creating /var/run/renderd folder...'
@@ -286,7 +307,7 @@ else
 fi
 
 # Replace default virtual host file
-cd ~/src
+cd $OSMUserHome/src
 wget https://raw.githubusercontent.com/jojoblaze/my-osm/master/000-default.conf
 
 mv 000-default.conf /etc/apache2/sites-available/000-default.conf
