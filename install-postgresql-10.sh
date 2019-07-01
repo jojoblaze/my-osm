@@ -59,7 +59,7 @@ if [[ ! -f $PG_HBA_PATH ]]; then
     echo '$PG_HBA_PATH file not found'
 else
     # Changing PostgreSQL authentication mode
-    echo 'Set PostgreSQL authentication mode to "trust" for local connections'
+    echo 'Set postgres user authentication mode to "trust" for local connections'
     sudo sed -i "s/local   all             postgres                                peer/local   all             postgres                                trust/g" $PG_HBA_PATH
 
     if [[ $? > 0 ]]; then
@@ -68,6 +68,20 @@ else
     else
         echo "The command ran succesfuly, continuing with script."
     fi
+
+
+
+    echo 'Set osm user authentication mode to "trust" for local connections'
+    sudo sed -i "a/local   all             postgres                                trust/local   all             $OSMUserName                                peer/g" $PG_HBA_PATH
+
+    if [[ $? > 0 ]]; then
+        echo "The command failed, exiting."
+        exit
+    else
+        echo "The command ran succesfuly, continuing with script."
+    fi
+
+
 
     echo 'Allow remote connection from any ip'
     sudo sed -i "s/host    all             all             127.0.0.1\/32            md5/host    all             all             0.0.0.0\/0               md5/g" $PG_HBA_PATH

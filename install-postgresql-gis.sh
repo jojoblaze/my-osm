@@ -185,15 +185,91 @@ wget -c $MapDataUri/$MapDataFileName
 # And paste the following text at the end of the file.
 # ServerAliveInterval 60
 
+
+
+# *** Stylesheet configuration ***
+echo '********************************'
+echo '*** Stylesheet configuration ***'
+echo '********************************'
+
+sudo apt-get install -y npm nodejs
+
+if [[ $? > 0 ]]; then
+    echo "The command failed, exiting."
+    exit
+else
+    echo "The command ran succesfuly, continuing with script."
+fi
+
+# # * check mapnik version *
+# MAPNIK_EXPECTED_VERSION="3.0.19"
+# if [ $(mapnik-config -v) != $MAPNIK_EXPECTED_VERSION ]
+# then
+#     echo 'ASSERT FAILED: expected mapnik version '$MAPNIK_EXPECTED_VERSION >>/dev/stderr
+# fi
+
+sudo npm install -g carto
+
+if [[ $? > 0 ]]; then
+    echo "The command failed, exiting."
+    exit
+else
+    echo "The command ran succesfuly, continuing with script."
+fi
+
+cd $OSMUserHome/src
+
+# wget https://github.com/gravitystorm/openstreetmap-carto/archive/v4.21.1.tar.gz
+# tar xvf v4.21.1.tar.gz
+# rm v4.21.1.tar.gz
+git clone git://github.com/gravitystorm/openstreetmap-carto.git
+
+chown -R $OSMUserName:$OSMUserName openstreetmap-carto
+cd openstreetmap-carto
+
+echo 'carto -v: $(carto -v)'
+
+carto project.mml | tee mapnik.xml
+
+# *** Shapefile download ***
+echo '**************************'
+echo '*** Shapefile download ***'
+echo '**************************'
+
+cd $OSMUserHome/src/openstreetmap-carto/scripts
+
+echo '@@@ running get-shapefiles.py...'
+./get-shapefiles.py
+
+if [[ $? > 0 ]]; then
+    echo "The command failed, exiting."
+    exit
+else
+    echo "The command ran succesfuly, continuing with script."
+fi
+
+echo '@@@ installing required fonts...'
+sudo apt-get install -y fonts-noto-cjk fonts-noto-hinted fonts-noto-unhinted fonts-hanazono ttf-unifont
+
+if [[ $? > 0 ]]; then
+    echo "The command failed, exiting."
+    exit
+else
+    echo "The command ran succesfuly, continuing with script."
+fi
+
+
+
 # *** Import the Map Data to PostgreSQL ***
 echo '*****************************************'
 echo '*** Import the Map Data to PostgreSQL ***'
 echo '*****************************************'
 
 echo '* running osm2pgsql *'
-osm2pgsql -U postgres --slim -d $OSMDatabaseName -C 1800 --hstore --create -G --number-processes 1 ~/data/$MapDataFileName
-# osm2pgsql -U $OSMUserName --slim -d $OSMDatabaseName -C 1800 --hstore --create -G --number-processes 1 ~/data/$MapDataFileName
+# osm2pgsql -U postgres --slim -d $OSMDatabaseName -C 1800 --hstore --create -G --number-processes 1 ~/data/$MapDataFileName
+osm2pgsql -U postgres --slim -d $OSMDatabaseName -C 1800 --hstore --tag-transform-script $OSMUserHome/src/openstreetmap-carto/openstreetmap-carto.lua --create -G --number-processes 1 -S $OSMUserHome/src/openstreetmap-carto/openstreetmap-carto.style ~/data/$MapDataFileName
 
+# osm2pgsql -U $OSMUserName --slim -d $OSMDatabaseName -C 1800 --hstore --create -G --number-processes 1 ~/data/$MapDataFileName
 # osm2pgsql -U postgres --slim -d $OSMDatabaseName -C 1800 --hstore -S ~/src/openstreetmap-carto/openstreetmap-carto.style --create -G --tag-transform-script ~/src/openstreetmap-carto/openstreetmap-carto.lua --number-processes 1  ~/data/$MapDataFileName
 
 echo '***************************************'

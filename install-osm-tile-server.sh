@@ -62,7 +62,7 @@ echo 'cloning mod_tile from GitHub *'
 git clone -b switch2osm git://github.com/SomeoneElseOSM/mod_tile.git
 # git clone -b switch2osm git://github.com/SomeoneElseOSM/mod_tile.git
 
-chown $OSMUserName:$OSMUserName mod_tile
+chown -R $OSMUserName:$OSMUserName mod_tile
 cd mod_tile
 
 echo 'Running autogen'
@@ -125,77 +125,7 @@ sudo ldconfig
 
 
 
-# *** Stylesheet configuration ***
-echo '********************************'
-echo '*** Stylesheet configuration ***'
-echo '********************************'
-
-sudo apt-get install -y npm nodejs
-
-if [[ $? > 0 ]]; then
-    echo "The command failed, exiting."
-    exit
-else
-    echo "The command ran succesfuly, continuing with script."
-fi
-
-# # * check mapnik version *
-# MAPNIK_EXPECTED_VERSION="3.0.19"
-# if [ $(mapnik-config -v) != $MAPNIK_EXPECTED_VERSION ]
-# then
-#     echo 'ASSERT FAILED: expected mapnik version '$MAPNIK_EXPECTED_VERSION >>/dev/stderr
-# fi
-
-sudo npm install -g carto
-
-if [[ $? > 0 ]]; then
-    echo "The command failed, exiting."
-    exit
-else
-    echo "The command ran succesfuly, continuing with script."
-fi
-
-cd $OSMUserHome/src
-
-# wget https://github.com/gravitystorm/openstreetmap-carto/archive/v4.21.1.tar.gz
-# tar xvf v4.21.1.tar.gz
-# rm v4.21.1.tar.gz
-git clone git://github.com/gravitystorm/openstreetmap-carto.git
-
-chown -R $OSMUserName:$OSMUserName openstreetmap-carto
-cd openstreetmap-carto
-
-echo 'carto -v: $(carto -v)'
-
-carto project.mml | tee mapnik.xml
-
-# *** Shapefile download ***
-echo '**************************'
-echo '*** Shapefile download ***'
-echo '**************************'
-
-cd $OSMUserHome/src/openstreetmap-carto/scripts
-
-echo '@@@ running get-shapefiles.py...'
-./get-shapefiles.py
-
-if [[ $? > 0 ]]; then
-    echo "The command failed, exiting."
-    exit
-else
-    echo "The command ran succesfuly, continuing with script."
-fi
-
-echo '@@@ installing required fonts...'
-sudo apt-get install -y fonts-noto-cjk fonts-noto-hinted fonts-noto-unhinted fonts-hanazono ttf-unifont
-
-if [[ $? > 0 ]]; then
-    echo "The command failed, exiting."
-    exit
-else
-    echo "The command ran succesfuly, continuing with script."
-fi
-
+# *** Stylesheet configuration *** (moved in install-postgresql-gis.sh)
 
 
 # *** Setting up webserver ***
@@ -208,7 +138,7 @@ echo '*** Configuring renderd ***'
 
 echo '* replacing values in renderd.conf *'
 
-RENDERD_CONF_PATH=~/src/mod_tile/renderd.conf
+RENDERD_CONF_PATH=$OSMUserHome/src/mod_tile/renderd.conf
 # RENDERD_CONF_PATH='/usr/local/etc/renderd.conf'
 # RENDERD_CONF_PATH='/home/osm/src/mod_tile/debian/renderd.conf'
 
