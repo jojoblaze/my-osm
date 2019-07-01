@@ -2,23 +2,41 @@
   "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
   "contentVersion": "1.0.0.0",
   "parameters": {
-    "PostGISDBServerName": {
-      "value": "osm-postgis-db-Ubuntu"
+    "ImagePublisher": {
+      "value": "Canonical"
+    },
+    "ImageOffer": {
+      "value": "UbuntuServer"
+    },
+    "OSSKU": {
+      "value": "18.04-LTS"
+    },
+    "OSVersion": {
+      "value": "latest"
+    },
+    "virtualMachineSize": {
+      "value": "Standard_A2"
     },
     "adminUserName": {
       "value": "ubuntu"
     },
     "adminPasswordOrKey": {
-      "value": "UbuntuAzure12345678"
+      "value": "Azure1234567890"
     },
     "authenticationType": {
       "value": "password"
+    },
+    "PostGISDBServerName": {
+      "value": "osm-postgis-db"
     },
     "osmDBUserName": {
       "value": "osm"
     },
     "osmDBPassword": {
       "value": "magellano123"
+    },
+    "osmDBName": {
+      "value": "gis"
     }
   }
 }
