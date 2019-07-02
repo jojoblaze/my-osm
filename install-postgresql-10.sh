@@ -58,6 +58,10 @@ PG_HBA_PATH='/etc/postgresql/10/main/pg_hba.conf'
 if [[ ! -f $PG_HBA_PATH ]]; then
     echo '$PG_HBA_PATH file not found'
 else
+
+    echo "*** creating a backup of original pg_hba.conf ***"
+    cp $PG_HBA_PATH $PG_HBA_PATH.bck
+
     # Changing PostgreSQL authentication mode
     echo 'Set postgres user authentication mode to "trust" for local connections'
     sudo sed -i "s/local   all             postgres                                peer/local   all             postgres                                trust/g" $PG_HBA_PATH
@@ -72,7 +76,7 @@ else
 
 
     echo 'Set osm user authentication mode to "trust" for local connections'
-    sudo sed -i "a/local   all             postgres                                trust/local   all             $OSMUserName                                peer/g" $PG_HBA_PATH
+    sudo sed -i "/^local   all             postgres                                trust/a local   all             $OSMUserName                                peer" $PG_HBA_PATH
 
     if [[ $? > 0 ]]; then
         echo "The command failed, exiting."
