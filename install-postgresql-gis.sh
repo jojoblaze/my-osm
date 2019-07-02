@@ -83,6 +83,8 @@ europe/italy/islands)
     ;;
 esac
 
+OSMUserHome=/home/$OSMUserName
+
 
 
 echo '**********************'
@@ -114,12 +116,26 @@ echo "Creating postgis extension on [$OSMDatabaseName] database"
 sudo -u postgres -i psql -c "CREATE EXTENSION postgis;" -d $OSMDatabaseName
 
 
+echo '********************************'
+echo '*** PostgreSQL configuration ***'
+echo '********************************'
+
+PG_HBA_PATH='/etc/postgresql/10/main/pg_hba.conf'
+
+if [[ ! -f $PG_HBA_PATH ]]; then
+    echo "[$PG_HBA_PATH] file not found"
+else
+    echo 'Set osm user authentication mode to "trust" for local connections'
+    sudo sed -i "/^local   all             postgres                                trust/a local   all             $OSMUserName                                trust" $PG_HBA_PATH
+fi
+
+
 
 echo '*****************************'
 echo '*** Creating service user ***'
 echo '*****************************'
 # Create osm user on your operating system so the tile server can run as osm user.
-echo "* creating operating system user ['$OSMUserName'] *"
+echo "* creating operating system user [$OSMUserName] *"
 #sudo adduser $OSMUserName --disabled-password --shell /bin/bash --gecos ""
 sudo useradd -m $OSMUserName
 
@@ -304,7 +320,7 @@ osm2pgsql -U postgres --slim -d $OSMDatabaseName -C 1800 --hstore --tag-transfor
 
 
 
-echo '******************************************************"
+echo "******************************************************"
 echo "*** Granting all privileges to [$OSMUserName] user ***"
 echo "******************************************************"
 

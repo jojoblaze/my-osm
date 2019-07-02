@@ -75,18 +75,6 @@ else
 
 
 
-    echo 'Set osm user authentication mode to "trust" for local connections'
-    sudo sed -i "/^local   all             postgres                                trust/a local   all             $OSMUserName                                peer" $PG_HBA_PATH
-
-    if [[ $? > 0 ]]; then
-        echo "The command failed, exiting."
-        exit
-    else
-        echo "The command ran succesfuly, continuing with script."
-    fi
-
-
-
     echo 'Allow remote connection from any ip'
     sudo sed -i "s/host    all             all             127.0.0.1\/32            md5/host    all             all             0.0.0.0\/0               md5/g" $PG_HBA_PATH
 
