@@ -197,18 +197,18 @@ echo '(downloading from '$MapDataUri/$MapDataFileName')'
 
 
 
-if [[ ! -d $OSMUserHome/src/data ]]; then
+if [[ ! -d $OSMUserHome/data ]]; then
 
-    cd $OSMUserHome/src
+    cd $OSMUserHome
 
-    echo "*** creating [$OSMUserHome/src/data] folder ***"
+    echo "*** creating [$OSMUserHome/data] folder ***"
     mkdir data
 
     # set OSM user owner
     chown -R $OSMUserName:$OSMUserName data
 fi
 
-cd $OSMUserHome/src/data
+cd $OSMUserHome/data
 
 wget -c $MapDataUri/$MapDataFileName
 # wget -c $(~/map_data_url_provider.sh $OSMRegion)
@@ -330,7 +330,7 @@ echo '*****************************************'
 
 echo '* running osm2pgsql *'
 # osm2pgsql -U postgres --slim -d $OSMDatabaseName -C 1800 --hstore --create -G --number-processes 1 ~/data/$MapDataFileName
-osm2pgsql -U postgres --slim -d $OSMDatabaseName -C 1800 --hstore --tag-transform-script $OSMUserHome/src/openstreetmap-carto/openstreetmap-carto.lua --create -G --number-processes 1 -S $OSMUserHome/src/openstreetmap-carto/openstreetmap-carto.style ~/data/$MapDataFileName
+osm2pgsql -U postgres --slim -d $OSMDatabaseName -C 1800 --hstore --tag-transform-script $OSMUserHome/src/openstreetmap-carto/openstreetmap-carto.lua --create -G --number-processes 1 -S $OSMUserHome/src/openstreetmap-carto/openstreetmap-carto.style $OSMUserHome/data/$MapDataFileName
 
 # osm2pgsql -U $OSMUserName --slim -d $OSMDatabaseName -C 1800 --hstore --create -G --number-processes 1 ~/data/$MapDataFileName
 # osm2pgsql -U postgres --slim -d $OSMDatabaseName -C 1800 --hstore -S ~/src/openstreetmap-carto/openstreetmap-carto.style --create -G --tag-transform-script ~/src/openstreetmap-carto/openstreetmap-carto.lua --number-processes 1  ~/data/$MapDataFileName
