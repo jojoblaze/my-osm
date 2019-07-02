@@ -124,6 +124,7 @@ PG_HBA_PATH='/etc/postgresql/10/main/pg_hba.conf'
 
 if [[ ! -f $PG_HBA_PATH ]]; then
     echo "[$PG_HBA_PATH] file not found"
+    exit 1
 else
     echo 'Set osm user authentication mode to "trust" for local connections'
     sudo sed -i "/^local   all             postgres                                trust/a local   all             $OSMUserName                                trust" $PG_HBA_PATH
@@ -165,7 +166,7 @@ sudo apt-get install -y make cmake g++ libboost-dev libboost-system-dev libboost
 
 if [[ $? > 0 ]]; then
     echo "The command failed, exiting."
-    exit
+    exit 1
 else
     echo "The command ran succesfuly, continuing with script."
 fi
@@ -180,7 +181,7 @@ sudo make install
 
 if [[ $? > 0 ]]; then
     echo "The command failed, exiting."
-    exit
+    exit 1
 else
     echo "The command ran succesfuly, continuing with script."
 fi
@@ -233,8 +234,8 @@ echo '***************************'
 sudo apt-get install -y npm nodejs
 
 if [[ $? > 0 ]]; then
-    echo "The command failed, exiting."
-    exit
+    echo "*** Unable to install NodeJs. ***"
+    exit 1
 else
     echo "The command ran succesfuly, continuing with script."
 fi
@@ -248,10 +249,11 @@ echo '**************************'
 sudo npm install -g carto
 
 if [[ $? > 0 ]]; then
-    echo "The command failed, exiting."
-    exit
+    echo "*** Unable to install Carto. ***"
+    exit 1
 else
-    echo "The command ran succesfuly, continuing with script."
+    echo "*** Cart installed succesfuly. ***"
+    echo "carto -v: $(carto -v)"
 fi
 
 
@@ -268,10 +270,25 @@ cd $OSMUserHome/src
 # rm v4.21.1.tar.gz
 git clone git://github.com/gravitystorm/openstreetmap-carto.git
 
+if [[ $? > 0 ]]; then
+    echo "*** Unable to clone openstreetmap-carto repository. ***"
+    exit 1
+else
+    echo "*** openstreetmap-carto repository cloned successfully. ***"
+fi
+
+
 chown -R $OSMUserName:$OSMUserName openstreetmap-carto
 cd openstreetmap-carto
 
-echo "carto -v: $(carto -v)"
+
+# directory 'data' is created by script get-shapefiles.py
+# I need to create it before launch the script in order to give it right permissions
+if [[ ! -d ./data ]]; then
+    mkdir data
+
+    chown -R $OSMUserName:$OSMUserName data
+fi
 
 carto project.mml | tee mapnik.xml
 
@@ -285,11 +302,11 @@ echo '**************************'
 cd $OSMUserHome/src/openstreetmap-carto/scripts
 
 echo '*** running get-shapefiles.py ***'
-./get-shapefiles.py
+sudo ./get-shapefiles.py
 
 if [[ $? > 0 ]]; then
-    echo "*** The command failed, exiting. ***"
-    exit
+    echo "*** Unable to download shape files. ***"
+    exit 1
 else
     echo "*** Shape files downloaded successfully. ***"
 fi
@@ -298,8 +315,8 @@ echo '*** installing required fonts ***'
 sudo apt-get install -y fonts-noto-cjk fonts-noto-hinted fonts-noto-unhinted fonts-hanazono ttf-unifont
 
 if [[ $? > 0 ]]; then
-    echo "The command failed, exiting."
-    exit
+    echo "*** Unable to install fonts. ***"
+    exit 1
 else
     echo "*** Fonts installed successfully. ***"
 fi
@@ -317,6 +334,13 @@ osm2pgsql -U postgres --slim -d $OSMDatabaseName -C 1800 --hstore --tag-transfor
 
 # osm2pgsql -U $OSMUserName --slim -d $OSMDatabaseName -C 1800 --hstore --create -G --number-processes 1 ~/data/$MapDataFileName
 # osm2pgsql -U postgres --slim -d $OSMDatabaseName -C 1800 --hstore -S ~/src/openstreetmap-carto/openstreetmap-carto.style --create -G --tag-transform-script ~/src/openstreetmap-carto/openstreetmap-carto.lua --number-processes 1  ~/data/$MapDataFileName
+
+if [[ $? > 0 ]]; then
+    echo "*** some error has occurred running osm2pgsql. ***"
+    exit 1
+else
+    echo "*** osm2pgsql imported data successfully. ***"
+fi
 
 
 

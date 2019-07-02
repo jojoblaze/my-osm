@@ -25,7 +25,7 @@ sudo apt-get install -y postgresql postgresql-contrib postgresql-client-common p
 
 if [[ $? > 0 ]]; then
     echo "The command failed, exiting."
-    exit
+    exit 1
 else
     echo "The command ran succesfuly, continuing with script."
 fi
@@ -33,17 +33,17 @@ fi
 # sudo -u postgres -i
 
 # create a PostgreSQL database user osm
-echo 'Creating PostgreSQL database user ['$OSMUserName']'
+echo "Creating PostgreSQL database user [$OSMUserName]"
 sudo -u postgres createuser $OSMUserName
 
 if [[ $? > 0 ]]; then
-    echo "The command failed, exiting."
-    exit
+    echo "*** Unable to create PostgreSQL user [$OSMUserName]."
+    exit 1
 else
-    echo "The command ran succesfuly, continuing with script."
+    echo "*** PostgreSQL user [$OSMUserName] created succesfuly. ***"
 fi
 
-echo 'Setting password to ['$OSMUserName'] database user'
+echo "Setting password to [$OSMUserName] database user"
 sudo -u postgres psql -c "ALTER USER $OSMUserName WITH PASSWORD '$OSMDBPassword';"
 
 
@@ -68,7 +68,7 @@ else
 
     if [[ $? > 0 ]]; then
         echo "The command failed, exiting."
-        exit
+        exit 1
     else
         echo "The command ran succesfuly, continuing with script."
     fi
@@ -80,7 +80,7 @@ else
 
     if [[ $? > 0 ]]; then
         echo "The command failed, exiting."
-        exit
+        exit 1
     else
         echo "The command ran succesfuly, continuing with script."
     fi
@@ -94,7 +94,7 @@ sudo service postgresql restart
 
 if [[ $? > 0 ]]; then
     echo "Some problem has occurred while restarting postgresql service, exiting."
-    exit
+    exit 1
 else
     echo "postgresql service restarted successfully."
 fi
