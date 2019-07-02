@@ -85,7 +85,6 @@ esac
 
 
 
-# *** Prepare system ***
 echo '**********************'
 echo '*** Prepare system ***'
 echo '**********************'
@@ -98,17 +97,21 @@ echo '* Setting Frontend as Non-Interactive *'
 export DEBIAN_FRONTEND=noninteractive
 
 
+
+
+echo '*************************'
+echo '*** Creating database ***'
+echo '*************************'
 # sudo -u postgres -i
 
+echo "Creating PostgreSQL [$OSMDatabaseName] database"
+sudo -u postgres -i createdb -E UTF8 -O $OSMUserName $OSMDatabaseName
 
-echo 'Creating PostgreSQL [$OSMDatabaseName] database'
-sudo -u postgres createdb -E UTF8 -O $OSMUserName $OSMDatabaseName
+echo "Creating hstore extension on the [$OSMDatabaseName] database"
+sudo -u postgres -i psql -c "CREATE EXTENSION hstore;" -d $OSMDatabaseName
 
-echo 'Creating hstore extension on the [$OSMDatabaseName] database'
-sudo -u postgres psql -c "CREATE EXTENSION hstore;" -d $OSMDatabaseName
-
-echo 'Creating postgis extension on [$OSMDatabaseName] database'
-sudo -u postgres psql -c "CREATE EXTENSION postgis;" -d $OSMDatabaseName
+echo "Creating postgis extension on [$OSMDatabaseName] database"
+sudo -u postgres -i psql -c "CREATE EXTENSION postgis;" -d $OSMDatabaseName
 
 
 
@@ -116,7 +119,7 @@ echo '*****************************'
 echo '*** Creating service user ***'
 echo '*****************************'
 # Create osm user on your operating system so the tile server can run as osm user.
-echo '* creating operating system user ['$OSMUserName'] *'
+echo "* creating operating system user ['$OSMUserName'] *"
 #sudo adduser $OSMUserName --disabled-password --shell /bin/bash --gecos ""
 sudo useradd -m $OSMUserName
 
@@ -127,9 +130,17 @@ echo '****************************'
 echo '*** Installing osm2pgsql ***'
 echo '****************************'
 
-cd ~
-mkdir ~/src
-cd ~/src
+if [[ ! -d $OSMUserHome/src ]]; then
+
+    cd $OSMUserHome
+    echo "*** creating [$OSMUserHome/src] folder"
+    mkdir src
+
+    # set OSM user owner
+    chown -R $OSMUserName:$OSMUserName src
+fi
+
+cd $OSMUserHome/src
 git clone git://github.com/openstreetmap/osm2pgsql.git
 cd osm2pgsql
 
@@ -167,9 +178,21 @@ echo '*************************'
 echo '(downloading from '$MapDataUri/$MapDataFileName')'
 # sudo su - $OSMUserName
 
-cd ~
-mkdir ~/data
-cd ~/data
+
+
+if [[ ! -d $OSMUserHome/src/data ]]; then
+
+    cd $OSMUserHome/src
+
+    echo "*** creating [$OSMUserHome/src/data] folder ***"
+    mkdir data
+
+    # set OSM user owner
+    chown -R $OSMUserName:$OSMUserName data
+fi
+
+cd $OSMUserHome/src/data
+
 wget -c $MapDataUri/$MapDataFileName
 # wget -c $(~/map_data_url_provider.sh $OSMRegion)
 
@@ -187,10 +210,9 @@ wget -c $MapDataUri/$MapDataFileName
 
 
 
-# *** Stylesheet configuration ***
-echo '********************************'
-echo '*** Stylesheet configuration ***'
-echo '********************************'
+echo '***************************'
+echo '*** NodeJs Installation ***'
+echo '***************************'
 
 sudo apt-get install -y npm nodejs
 
@@ -201,12 +223,11 @@ else
     echo "The command ran succesfuly, continuing with script."
 fi
 
-# # * check mapnik version *
-# MAPNIK_EXPECTED_VERSION="3.0.19"
-# if [ $(mapnik-config -v) != $MAPNIK_EXPECTED_VERSION ]
-# then
-#     echo 'ASSERT FAILED: expected mapnik version '$MAPNIK_EXPECTED_VERSION >>/dev/stderr
-# fi
+
+
+echo '**************************'
+echo '*** Carto Installation ***'
+echo '**************************'
 
 sudo npm install -g carto
 
@@ -216,6 +237,13 @@ if [[ $? > 0 ]]; then
 else
     echo "The command ran succesfuly, continuing with script."
 fi
+
+
+
+# *** Stylesheet configuration ***
+echo '********************************'
+echo '*** Stylesheet configuration ***'
+echo '********************************'
 
 cd $OSMUserHome/src
 
@@ -227,9 +255,11 @@ git clone git://github.com/gravitystorm/openstreetmap-carto.git
 chown -R $OSMUserName:$OSMUserName openstreetmap-carto
 cd openstreetmap-carto
 
-echo 'carto -v: $(carto -v)'
+echo "carto -v: $(carto -v)"
 
 carto project.mml | tee mapnik.xml
+
+
 
 # *** Shapefile download ***
 echo '**************************'
@@ -238,24 +268,24 @@ echo '**************************'
 
 cd $OSMUserHome/src/openstreetmap-carto/scripts
 
-echo '@@@ running get-shapefiles.py...'
+echo '*** running get-shapefiles.py ***'
 ./get-shapefiles.py
 
 if [[ $? > 0 ]]; then
-    echo "The command failed, exiting."
+    echo "*** The command failed, exiting. ***"
     exit
 else
-    echo "The command ran succesfuly, continuing with script."
+    echo "*** Shape files downloaded successfully. ***"
 fi
 
-echo '@@@ installing required fonts...'
+echo '*** installing required fonts ***'
 sudo apt-get install -y fonts-noto-cjk fonts-noto-hinted fonts-noto-unhinted fonts-hanazono ttf-unifont
 
 if [[ $? > 0 ]]; then
     echo "The command failed, exiting."
     exit
 else
-    echo "The command ran succesfuly, continuing with script."
+    echo "*** Fonts installed successfully. ***"
 fi
 
 
@@ -272,9 +302,11 @@ osm2pgsql -U postgres --slim -d $OSMDatabaseName -C 1800 --hstore --tag-transfor
 # osm2pgsql -U $OSMUserName --slim -d $OSMDatabaseName -C 1800 --hstore --create -G --number-processes 1 ~/data/$MapDataFileName
 # osm2pgsql -U postgres --slim -d $OSMDatabaseName -C 1800 --hstore -S ~/src/openstreetmap-carto/openstreetmap-carto.style --create -G --tag-transform-script ~/src/openstreetmap-carto/openstreetmap-carto.lua --number-processes 1  ~/data/$MapDataFileName
 
-echo '***************************************'
-echo '*** Granting all privileges to user ***'
-echo '***************************************'
+
+
+echo '******************************************************"
+echo "*** Granting all privileges to [$OSMUserName] user ***"
+echo "******************************************************"
 
 sudo -u postgres psql -c "GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO $OSMUserName;" -d $OSMDatabaseName
 

@@ -22,6 +22,13 @@ fi
 echo 'Installing Mapnik'
 sudo apt-get install -y autoconf apache2-dev libtool libxml2-dev libbz2-dev libgeos-dev libgeos++-dev libproj-dev gdal-bin libmapnik-dev mapnik-utils python-mapnik
 
+# # * check mapnik version *
+# MAPNIK_EXPECTED_VERSION="3.0.19"
+# if [ $(mapnik-config -v) != $MAPNIK_EXPECTED_VERSION ]
+# then
+#     echo 'ASSERT FAILED: expected mapnik version '$MAPNIK_EXPECTED_VERSION >>/dev/stderr
+# fi
+
 echo '@@@ Testing python mapnik...'
 python -c "import mapnik"
 
