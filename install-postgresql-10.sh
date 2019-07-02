@@ -21,7 +21,7 @@ export DEBIAN_FRONTEND=noninteractive
 echo '*******************************************************'
 echo '*** Install PostgreSQL Database Server with PostGIS ***'
 echo '*******************************************************'
-sudo apt-get install -y postgresql postgresql-contrib postgis postgresql-10-postgis-2.4 postgresql-10-postgis-scripts
+sudo apt-get install -y postgresql postgresql-contrib postgresql-client-common postgis postgresql-10-postgis-2.4 postgresql-10-postgis-scripts
 
 if [[ $? > 0 ]]; then
     echo "The command failed, exiting."
