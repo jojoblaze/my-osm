@@ -21,11 +21,11 @@ export DEBIAN_FRONTEND=noninteractive
 echo '*******************************************************'
 echo '*** Install PostgreSQL Database Server with PostGIS ***'
 echo '*******************************************************'
-sudo apt-get install -y postgresql postgresql-contrib postgis postgresql-10-postgis-2.4 postgresql-10-postgis-scripts
+sudo apt-get install -y postgresql postgresql-contrib postgresql-client-common postgis postgresql-10-postgis-2.4 postgresql-10-postgis-scripts
 
 if [[ $? > 0 ]]; then
     echo "The command failed, exiting."
-    exit
+    exit 1
 else
     echo "The command ran succesfuly, continuing with script."
 fi
@@ -33,17 +33,17 @@ fi
 # sudo -u postgres -i
 
 # create a PostgreSQL database user osm
-echo 'Creating PostgreSQL database user ['$OSMUserName']'
+echo "Creating PostgreSQL database user [$OSMUserName]"
 sudo -u postgres createuser $OSMUserName
 
 if [[ $? > 0 ]]; then
-    echo "The command failed, exiting."
-    exit
+    echo "*** Unable to create PostgreSQL user [$OSMUserName]."
+    exit 1
 else
-    echo "The command ran succesfuly, continuing with script."
+    echo "*** PostgreSQL user [$OSMUserName] created succesfuly. ***"
 fi
 
-echo 'Setting password to ['$OSMUserName'] database user'
+echo "Setting password to [$OSMUserName] database user"
 sudo -u postgres psql -c "ALTER USER $OSMUserName WITH PASSWORD '$OSMDBPassword';"
 
 
@@ -58,25 +58,17 @@ PG_HBA_PATH='/etc/postgresql/10/main/pg_hba.conf'
 if [[ ! -f $PG_HBA_PATH ]]; then
     echo '$PG_HBA_PATH file not found'
 else
+
+    echo "*** creating a backup of original pg_hba.conf ***"
+    cp $PG_HBA_PATH $PG_HBA_PATH.bck
+
     # Changing PostgreSQL authentication mode
     echo 'Set postgres user authentication mode to "trust" for local connections'
     sudo sed -i "s/local   all             postgres                                peer/local   all             postgres                                trust/g" $PG_HBA_PATH
 
     if [[ $? > 0 ]]; then
         echo "The command failed, exiting."
-        exit
-    else
-        echo "The command ran succesfuly, continuing with script."
-    fi
-
-
-
-    echo 'Set osm user authentication mode to "trust" for local connections'
-    sudo sed -i "a/local   all             postgres                                trust/local   all             $OSMUserName                                peer/g" $PG_HBA_PATH
-
-    if [[ $? > 0 ]]; then
-        echo "The command failed, exiting."
-        exit
+        exit 1
     else
         echo "The command ran succesfuly, continuing with script."
     fi
@@ -88,7 +80,7 @@ else
 
     if [[ $? > 0 ]]; then
         echo "The command failed, exiting."
-        exit
+        exit 1
     else
         echo "The command ran succesfuly, continuing with script."
     fi
@@ -102,7 +94,7 @@ sudo service postgresql restart
 
 if [[ $? > 0 ]]; then
     echo "Some problem has occurred while restarting postgresql service, exiting."
-    exit
+    exit 1
 else
     echo "postgresql service restarted successfully."
 fi

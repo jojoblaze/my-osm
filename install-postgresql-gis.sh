@@ -83,9 +83,10 @@ europe/italy/islands)
     ;;
 esac
 
+OSMUserHome=/home/$OSMUserName
 
 
-# *** Prepare system ***
+
 echo '**********************'
 echo '*** Prepare system ***'
 echo '**********************'
@@ -98,17 +99,36 @@ echo '* Setting Frontend as Non-Interactive *'
 export DEBIAN_FRONTEND=noninteractive
 
 
+
+
+echo '*************************'
+echo '*** Creating database ***'
+echo '*************************'
 # sudo -u postgres -i
 
+echo "Creating PostgreSQL [$OSMDatabaseName] database"
+sudo -u postgres -i createdb -E UTF8 -O $OSMUserName $OSMDatabaseName
 
-echo 'Creating PostgreSQL [$OSMDatabaseName] database'
-sudo -u postgres createdb -E UTF8 -O $OSMUserName $OSMDatabaseName
+echo "Creating hstore extension on the [$OSMDatabaseName] database"
+sudo -u postgres -i psql -c "CREATE EXTENSION hstore;" -d $OSMDatabaseName
 
-echo 'Creating hstore extension on the [$OSMDatabaseName] database'
-sudo -u postgres psql -c "CREATE EXTENSION hstore;" -d $OSMDatabaseName
+echo "Creating postgis extension on [$OSMDatabaseName] database"
+sudo -u postgres -i psql -c "CREATE EXTENSION postgis;" -d $OSMDatabaseName
 
-echo 'Creating postgis extension on [$OSMDatabaseName] database'
-sudo -u postgres psql -c "CREATE EXTENSION postgis;" -d $OSMDatabaseName
+
+echo '********************************'
+echo '*** PostgreSQL configuration ***'
+echo '********************************'
+
+PG_HBA_PATH='/etc/postgresql/10/main/pg_hba.conf'
+
+if [[ ! -f $PG_HBA_PATH ]]; then
+    echo "[$PG_HBA_PATH] file not found"
+    exit 1
+else
+    echo 'Set osm user authentication mode to "trust" for local connections'
+    sudo sed -i "/^local   all             postgres                                trust/a local   all             $OSMUserName                                trust" $PG_HBA_PATH
+fi
 
 
 
@@ -116,7 +136,7 @@ echo '*****************************'
 echo '*** Creating service user ***'
 echo '*****************************'
 # Create osm user on your operating system so the tile server can run as osm user.
-echo '* creating operating system user ['$OSMUserName'] *'
+echo "* creating operating system user [$OSMUserName] *"
 #sudo adduser $OSMUserName --disabled-password --shell /bin/bash --gecos ""
 sudo useradd -m $OSMUserName
 
@@ -127,9 +147,17 @@ echo '****************************'
 echo '*** Installing osm2pgsql ***'
 echo '****************************'
 
-cd ~
-mkdir ~/src
-cd ~/src
+if [[ ! -d $OSMUserHome/src ]]; then
+
+    cd $OSMUserHome
+    echo "*** creating [$OSMUserHome/src] folder"
+    mkdir src
+
+    # set OSM user owner
+    chown -R $OSMUserName:$OSMUserName src
+fi
+
+cd $OSMUserHome/src
 git clone git://github.com/openstreetmap/osm2pgsql.git
 cd osm2pgsql
 
@@ -138,7 +166,7 @@ sudo apt-get install -y make cmake g++ libboost-dev libboost-system-dev libboost
 
 if [[ $? > 0 ]]; then
     echo "The command failed, exiting."
-    exit
+    exit 1
 else
     echo "The command ran succesfuly, continuing with script."
 fi
@@ -153,7 +181,7 @@ sudo make install
 
 if [[ $? > 0 ]]; then
     echo "The command failed, exiting."
-    exit
+    exit 1
 else
     echo "The command ran succesfuly, continuing with script."
 fi
@@ -167,9 +195,21 @@ echo '*************************'
 echo '(downloading from '$MapDataUri/$MapDataFileName')'
 # sudo su - $OSMUserName
 
-cd ~
-mkdir ~/data
-cd ~/data
+
+
+if [[ ! -d $OSMUserHome/data ]]; then
+
+    cd $OSMUserHome
+
+    echo "*** creating [$OSMUserHome/data] folder ***"
+    mkdir data
+
+    # set OSM user owner
+    chown -R $OSMUserName:$OSMUserName data
+fi
+
+cd $OSMUserHome/data
+
 wget -c $MapDataUri/$MapDataFileName
 # wget -c $(~/map_data_url_provider.sh $OSMRegion)
 
@@ -187,35 +227,41 @@ wget -c $MapDataUri/$MapDataFileName
 
 
 
-# *** Stylesheet configuration ***
-echo '********************************'
-echo '*** Stylesheet configuration ***'
-echo '********************************'
+echo '***************************'
+echo '*** NodeJs Installation ***'
+echo '***************************'
 
 sudo apt-get install -y npm nodejs
 
 if [[ $? > 0 ]]; then
-    echo "The command failed, exiting."
-    exit
+    echo "*** Unable to install NodeJs. ***"
+    exit 1
 else
     echo "The command ran succesfuly, continuing with script."
 fi
 
-# # * check mapnik version *
-# MAPNIK_EXPECTED_VERSION="3.0.19"
-# if [ $(mapnik-config -v) != $MAPNIK_EXPECTED_VERSION ]
-# then
-#     echo 'ASSERT FAILED: expected mapnik version '$MAPNIK_EXPECTED_VERSION >>/dev/stderr
-# fi
+
+
+echo '**************************'
+echo '*** Carto Installation ***'
+echo '**************************'
 
 sudo npm install -g carto
 
 if [[ $? > 0 ]]; then
-    echo "The command failed, exiting."
-    exit
+    echo "*** Unable to install Carto. ***"
+    exit 1
 else
-    echo "The command ran succesfuly, continuing with script."
+    echo "*** Cart installed succesfuly. ***"
+    echo "carto -v: $(carto -v)"
 fi
+
+
+
+# *** Stylesheet configuration ***
+echo '********************************'
+echo '*** Stylesheet configuration ***'
+echo '********************************'
 
 cd $OSMUserHome/src
 
@@ -224,12 +270,29 @@ cd $OSMUserHome/src
 # rm v4.21.1.tar.gz
 git clone git://github.com/gravitystorm/openstreetmap-carto.git
 
+if [[ $? > 0 ]]; then
+    echo "*** Unable to clone openstreetmap-carto repository. ***"
+    exit 1
+else
+    echo "*** openstreetmap-carto repository cloned successfully. ***"
+fi
+
+
 chown -R $OSMUserName:$OSMUserName openstreetmap-carto
 cd openstreetmap-carto
 
-echo 'carto -v: $(carto -v)'
+
+# directory 'data' is created by script get-shapefiles.py
+# I need to create it before launch the script in order to give it right permissions
+if [[ ! -d ./data ]]; then
+    mkdir data
+
+    chown -R $OSMUserName:$OSMUserName data
+fi
 
 carto project.mml | tee mapnik.xml
+
+
 
 # *** Shapefile download ***
 echo '**************************'
@@ -238,24 +301,24 @@ echo '**************************'
 
 cd $OSMUserHome/src/openstreetmap-carto/scripts
 
-echo '@@@ running get-shapefiles.py...'
-./get-shapefiles.py
+echo '*** running get-shapefiles.py ***'
+sudo ./get-shapefiles.py
 
 if [[ $? > 0 ]]; then
-    echo "The command failed, exiting."
-    exit
+    echo "*** Unable to download shape files. ***"
+    exit 1
 else
-    echo "The command ran succesfuly, continuing with script."
+    echo "*** Shape files downloaded successfully. ***"
 fi
 
-echo '@@@ installing required fonts...'
+echo '*** installing required fonts ***'
 sudo apt-get install -y fonts-noto-cjk fonts-noto-hinted fonts-noto-unhinted fonts-hanazono ttf-unifont
 
 if [[ $? > 0 ]]; then
-    echo "The command failed, exiting."
-    exit
+    echo "*** Unable to install fonts. ***"
+    exit 1
 else
-    echo "The command ran succesfuly, continuing with script."
+    echo "*** Fonts installed successfully. ***"
 fi
 
 
@@ -267,14 +330,23 @@ echo '*****************************************'
 
 echo '* running osm2pgsql *'
 # osm2pgsql -U postgres --slim -d $OSMDatabaseName -C 1800 --hstore --create -G --number-processes 1 ~/data/$MapDataFileName
-osm2pgsql -U postgres --slim -d $OSMDatabaseName -C 1800 --hstore --tag-transform-script $OSMUserHome/src/openstreetmap-carto/openstreetmap-carto.lua --create -G --number-processes 1 -S $OSMUserHome/src/openstreetmap-carto/openstreetmap-carto.style ~/data/$MapDataFileName
+osm2pgsql -U postgres --slim -d $OSMDatabaseName -C 1800 --hstore --tag-transform-script $OSMUserHome/src/openstreetmap-carto/openstreetmap-carto.lua --create -G --number-processes 1 -S $OSMUserHome/src/openstreetmap-carto/openstreetmap-carto.style $OSMUserHome/data/$MapDataFileName
 
 # osm2pgsql -U $OSMUserName --slim -d $OSMDatabaseName -C 1800 --hstore --create -G --number-processes 1 ~/data/$MapDataFileName
 # osm2pgsql -U postgres --slim -d $OSMDatabaseName -C 1800 --hstore -S ~/src/openstreetmap-carto/openstreetmap-carto.style --create -G --tag-transform-script ~/src/openstreetmap-carto/openstreetmap-carto.lua --number-processes 1  ~/data/$MapDataFileName
 
-echo '***************************************'
-echo '*** Granting all privileges to user ***'
-echo '***************************************'
+if [[ $? > 0 ]]; then
+    echo "*** some error has occurred running osm2pgsql. ***"
+    exit 1
+else
+    echo "*** osm2pgsql imported data successfully. ***"
+fi
+
+
+
+echo "******************************************************"
+echo "*** Granting all privileges to [$OSMUserName] user ***"
+echo "******************************************************"
 
 sudo -u postgres psql -c "GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO $OSMUserName;" -d $OSMDatabaseName
 

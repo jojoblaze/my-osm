@@ -22,6 +22,13 @@ fi
 echo 'Installing Mapnik'
 sudo apt-get install -y autoconf apache2-dev libtool libxml2-dev libbz2-dev libgeos-dev libgeos++-dev libproj-dev gdal-bin libmapnik-dev mapnik-utils python-mapnik
 
+# # * check mapnik version *
+# MAPNIK_EXPECTED_VERSION="3.0.19"
+# if [ $(mapnik-config -v) != $MAPNIK_EXPECTED_VERSION ]
+# then
+#     echo 'ASSERT FAILED: expected mapnik version '$MAPNIK_EXPECTED_VERSION >>/dev/stderr
+# fi
+
 echo '@@@ Testing python mapnik...'
 python -c "import mapnik"
 
@@ -32,14 +39,12 @@ else
     echo "The command ran succesfuly, continuing with script."
 fi
 
-
-
 # *** Install mod_tile ***
 echo '************************'
 echo '*** Install mod_tile ***'
 echo '************************'
-# mod_tile is an Apache module that is required to serve tiles. 
-# Currently no binary package is available for Ubuntu. 
+# mod_tile is an Apache module that is required to serve tiles.
+# Currently no binary package is available for Ubuntu.
 # We can compile it from Github repository.
 
 # echo 'logging as ['$OSMUserName']'
@@ -123,10 +128,7 @@ fi
 
 sudo ldconfig
 
-
-
 # *** Stylesheet configuration *** (moved in install-postgresql-gis.sh)
-
 
 # *** Setting up webserver ***
 echo '****************************'
@@ -178,15 +180,13 @@ else
 
 fi
 
-
-
 # Install renderd init script by copying the sample init script.
 echo '* Install renderd init script by copying the sample init script *'
 
-if [[ ! -f $OSMUserHome/src/mod_tile/renderd.init ]]; then
-    echo "file $OSMUserHome/src/mod_tile/renderd.init not found"
+if [[ ! -f $OSMUserHome/src/mod_tile/debian/renderd.init ]]; then
+    echo "File [$OSMUserHome/src/mod_tile/renderd.init] not found."
 else
-    sudo cp $OSMUserHome/src/mod_tile/renderd.init /etc/init.d/renderd
+    sudo cp $OSMUserHome/src/mod_tile/debian/renderd.init /etc/init.d/renderd
 
     # Grant execute permission
     echo '* Grant execute permission *'
@@ -196,13 +196,10 @@ else
     # Change the following variable in /etc/init.d/renderd file
     # sudo sed -i "s/DAEMON=\/usr\/bin\/\$NAME/DAEMON=\/usr\/local\/bin\/\$NAME/g" /etc/init.d/renderd
 
-
     sudo sed -i "s/DAEMON_ARGS=.*/DAEMON_ARGS=\"-c \/home\/osm\/src\/mod_tile\/renderd.conf\"/g" /etc/init.d/renderd
 
     sudo sed -i "s/RUNASUSER=renderaccount/RUNASUSER=$OSMUserName/g" /etc/init.d/renderd
 fi
-
-
 
 # *** Configuring Apache ***
 echo '**************************'
@@ -211,34 +208,49 @@ echo '**************************'
 
 sudo mkdir -p /var/lib/mod_tile
 
-
 echo 'changing permissions to folder'
 sudo chown -R $OSMUserName /var/lib/mod_tile
-
 
 echo 'creating /var/run/renderd folder...'
 sudo mkdir /var/run/renderd
 
-
 echo 'changing permissions to folder'
 sudo chown -R $OSMUserName /var/run/renderd
 
-echo "Create a module load file"
-echo "LoadModule tile_module /usr/lib/apache2/modules/mod_tile.so" | sudo tee /etc/apache2/conf-available/mod_tile.conf
 
-echo '@@@ enabling mod_tile module'
-sudo a2enconf mod_tile
 
-if [[ $? > 0 ]]; then
-    echo "The command failed, exiting."
-    exit
+MOD_TILE_LIB_PATH=/usr/lib/apache2/modules/mod_tile.so
+if [[ ! -f $MOD_TILE_LIB_PATH ]]; then
+    echo "File [$MOD_TILE_LIB_PATH] not found."
+    exit 1
 else
-    echo "The command ran succesfuly, continuing with script."
+    echo "Create a module load file"
+    echo "LoadModule tile_module $MOD_TILE_LIB_PATH" | sudo tee /etc/apache2/conf-available/mod_tile.conf
+
+    echo '@@@ enabling mod_tile module'
+    sudo a2enconf mod_tile
+
+    if [[ $? > 0 ]]; then
+        echo "The command failed, exiting."
+        exit
+    else
+        echo "The command ran succesfuly, continuing with script."
+    fi
+
 fi
+
 
 # Replace default virtual host file
 cd $OSMUserHome/src
 wget https://raw.githubusercontent.com/jojoblaze/my-osm/master/000-default.conf
+
+if [[ $? > 0 ]]; then
+    echo "Some error has occurred while downloading Apache virtual host configuration."
+    exit 1
+else
+    echo "Apache virtual host configuration downloaded successfully."
+fi
+
 
 mv 000-default.conf /etc/apache2/sites-available/000-default.conf
 

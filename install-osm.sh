@@ -8,7 +8,7 @@ OSMRegion=$4
 
 if [[ $? > 0 ]]; then
     echo "Something goes wrong in PostgreSQL installation"
-    exit
+    exit 1
 else
     echo "PostgreSQL installation successfully"
 fi
@@ -17,7 +17,7 @@ fi
 
 if [[ $? > 0 ]]; then
     echo "Something goes wrong in PostgreGIS installation"
-    exit
+    exit 1
 else
     echo "PostgreGIS installation successfully"
 fi
@@ -26,7 +26,7 @@ fi
 
 if [[ $? > 0 ]]; then
     echo "Something goes wrong in webserver configuration"
-    exit
+    exit 1
 else
     echo "webserver configuration successfully"
 fi
