@@ -17,7 +17,12 @@ sudo cat /var/log/azure/custom-script/handler.log
 
 # troubleshooting
 
+sudo cat /var/log/waagent.log 
+
+
 sudo cat /var/log/syslog
+
+
 
 
 
