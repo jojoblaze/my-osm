@@ -40,7 +40,7 @@ echo -e "${GREEN}*******************************************************${NC}"
 sudo apt-get install -y postgresql postgresql-contrib postgresql-client-common postgis postgresql-10-postgis-2.4 postgresql-10-postgis-scripts
 
 if [[ $? > 0 ]]; then
-    echo "Some error has occurred installing PostgreSQL."
+    echo -e "${RED}Some error has occurred installing PostgreSQL.${NC}"
     exit 1
 else
     echo "PostgreSQL installed succesfuly."
@@ -72,6 +72,7 @@ PG_HBA_PATH='/etc/postgresql/10/main/pg_hba.conf'
 
 if [[ ! -f ${PG_HBA_PATH} ]]; then
     echo -e "${RED}${PG_HBA_PATH} file not found.${NC}"
+    exit 1
 else
 
     echo "*** creating a backup of original pg_hba.conf ***"
@@ -84,8 +85,6 @@ else
     if [[ $? > 0 ]]; then
         echo -e "${RED}The command failed, exiting.${NC}"
         exit 1
-    else
-        echo "The command ran succesfuly, continuing with script."
     fi
 
 
@@ -96,8 +95,6 @@ else
     if [[ $? > 0 ]]; then
         echo -e "${RED}The command failed, exiting.${NC}"
         exit 1
-    else
-        echo "The command ran succesfuly, continuing with script."
     fi
 fi
 

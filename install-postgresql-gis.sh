@@ -286,6 +286,8 @@ cd ${OSMUserHome}/src
 # wget https://github.com/gravitystorm/openstreetmap-carto/archive/v4.21.1.tar.gz
 # tar xvf v4.21.1.tar.gz
 # rm v4.21.1.tar.gz
+
+echo "cloning openstreetmap-carto repository"
 git clone git://github.com/gravitystorm/openstreetmap-carto.git
 
 if [[ $? > 0 ]]; then
@@ -309,27 +311,27 @@ echo -e "${GREEN}**************************${NC}"
 
 cd ${OSMUserHome}/src/openstreetmap-carto
 
-# directory 'data' is created by script get-shapefiles.py
-# I need to create it before launch the script in order to give it right permissions
-if [[ ! -d ./data ]]; then
+# # directory 'data' is created by script get-shapefiles.py
+# # I need to create it before launch the script in order to give it right permissions
+# if [[ ! -d ./data ]]; then
 
-    # create data directory
-    mkdir data
+#     # create data directory
+#     mkdir data
 
-    if [[ $? > 0 ]]; then
-        echo -e "${RED}Unable to create [${OSMUserHome}/src/openstreetmap-carto/data] folder.${NC}"
-        exit 1
-    else
-        echo "Folder ${OSMUserHome}/src/openstreetmap-carto/data created successfully."
-    fi
+#     if [[ $? > 0 ]]; then
+#         echo -e "${RED}Unable to create [${OSMUserHome}/src/openstreetmap-carto/data] folder.${NC}"
+#         exit 1
+#     else
+#         echo "Folder ${OSMUserHome}/src/openstreetmap-carto/data created successfully."
+#     fi
 
-    chown -R ${OSMUserName} data
-fi
+#     chown -R ${OSMUserName} data
+# fi
 
 cd ${OSMUserHome}/src/openstreetmap-carto
 
-echo '*** running get-shapefiles.py ***'
-sudo ./scripts/get-shapefiles.py >2&1
+echo 'running get-shapefiles.py'
+sudo ./scripts/get-shapefiles.py 2>&1
 
 if [[ $? > 0 ]]; then
     echo -e "${RED}Unable to download shape files.${NC}"
