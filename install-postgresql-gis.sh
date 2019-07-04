@@ -223,7 +223,7 @@ if [[ ! -d ${OSMUserHome}/data ]]; then
         echo -e "${RED}Unable to create ${OSMUserHome}/data folder.${NC}"
         exit 1
     else
-        echo "Folder ${OSMUserHome}/src/data created successfully."
+        echo "Folder ${OSMUserHome}/data created successfully."
     fi
 
     # set OSM user owner
@@ -295,7 +295,8 @@ else
     echo "openstreetmap-carto repository cloned successfully."
 fi
 
-chown -R ${OSMUserName}:${OSMUserName} openstreetmap-carto
+# chown -R ${OSMUserName}:${OSMUserName} openstreetmap-carto
+chown -R ${OSMUserName} openstreetmap-carto
 cd openstreetmap-carto
 
 carto project.mml | tee mapnik.xml
@@ -305,6 +306,7 @@ carto project.mml | tee mapnik.xml
 echo -e "${GREEN}**************************${NC}"
 echo -e "${GREEN}*** Shapefile download ***${NC}"
 echo -e "${GREEN}**************************${NC}"
+
 cd ${OSMUserHome}/src/openstreetmap-carto
 
 # directory 'data' is created by script get-shapefiles.py
@@ -324,10 +326,10 @@ if [[ ! -d ./data ]]; then
     chown -R ${OSMUserName} data
 fi
 
-cd ${OSMUserHome}/src/openstreetmap-carto/scripts
+cd ${OSMUserHome}/src/openstreetmap-carto
 
 echo '*** running get-shapefiles.py ***'
-sudo ./get-shapefiles.py
+sudo ./scripts/get-shapefiles.py >2&1
 
 if [[ $? > 0 ]]; then
     echo -e "${RED}Unable to download shape files.${NC}"

@@ -104,7 +104,7 @@ fi
 
 
 # restarting postgres
-echo '* restarting postgres *'
+echo 'restarting postgres'
 sudo service postgresql restart
 
 if [[ $? > 0 ]]; then
