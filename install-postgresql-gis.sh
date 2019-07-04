@@ -16,7 +16,6 @@ OSMDBPassword=$2
 OSMDatabaseName=$3
 OSMRegion=$4
 
-
 # output coloring
 BLACK='\033[0;30m'
 RED='\033[0;31m'
@@ -39,6 +38,11 @@ WHITE='\033[1;37m'
 NC='\033[0m' # No Color
 
 
+
+echo -e "${CYAN}OSMUserName:${NC} ${OSMUserName}"
+echo -e "${CYAN}OSMDBPassword:${NC} ${OSMDBPassword}"
+echo -e "${CYAN}OSMDatabaseName:${NC} ${OSMDatabaseName}"
+echo -e "${CYAN}OSMRegion:${NC} ${OSMRegion}"
 
 MapDataUri=http://download.geofabrik.de
 
@@ -140,7 +144,7 @@ echo -e "${GREEN}*** Creating database ***${NC}"
 echo -e "${GREEN}*************************${NC}"
 # sudo -u postgres -i
 
-echo "Creating database $(${OSMDatabaseName})"
+echo "Creating database ${OSMDatabaseName}"
 sudo -u postgres -i createdb -E UTF8 -O ${OSMUserName} ${OSMDatabaseName}
 
 echo "Creating hstore extension on the $(${OSMDatabaseName}) database"
