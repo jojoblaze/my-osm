@@ -331,7 +331,7 @@ cd ${OSMUserHome}/src/openstreetmap-carto
 cd ${OSMUserHome}/src/openstreetmap-carto
 
 echo 'running get-shapefiles.py'
-sudo ./scripts/get-shapefiles.py
+sudo ./scripts/get-shapefiles.py --no-curl
 
 if [[ $? > 0 ]]; then
     echo -e "${RED}Unable to download shape files.${NC}"
