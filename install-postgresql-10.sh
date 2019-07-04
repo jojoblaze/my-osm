@@ -14,11 +14,16 @@
 DB_USER=$1
 DB_USER_PASSWORD=$2
 
+# output coloring
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+NC='\033[0m' # No Color
 
-# *** Prepare system ***
-echo '**********************'
-echo '*** Prepare system ***'
-echo '**********************'
+
+
+echo -e "${GREEN}****************************${NC}"
+echo -e "${GREEN}*** Preparing the system ***${NC}"
+echo -e "${GREEN}****************************${NC}"
 
 echo 'Updating the system'
 sudo apt-get update -y --fix-missing
@@ -29,10 +34,9 @@ export DEBIAN_FRONTEND=noninteractive
 
 
 
-# *** Install PostgreSQL Database Server with PostGIS ***
-echo '*******************************************************'
-echo '*** Install PostgreSQL Database Server with PostGIS ***'
-echo '*******************************************************'
+echo -e "${GREEN}*******************************************************${NC}"
+echo -e "${GREEN}*** Install PostgreSQL Database Server with PostGIS ***${NC}"
+echo -e "${GREEN}*******************************************************${NC}"
 sudo apt-get install -y postgresql postgresql-contrib postgresql-client-common postgis postgresql-10-postgis-2.4 postgresql-10-postgis-scripts
 
 if [[ $? > 0 ]]; then
@@ -49,7 +53,7 @@ echo "Creating PostgreSQL database user ${DB_USER}"
 sudo -u postgres createuser ${DB_USER}
 
 if [[ $? > 0 ]]; then
-    echo "Unable to create PostgreSQL user ${DB_USER}."
+    echo -e "${RED}Unable to create PostgreSQL user ${DB_USER}.${NC}"
     exit 1
 else
     echo "PostgreSQL user ${DB_USER} created succesfuly."
@@ -60,15 +64,14 @@ sudo -u postgres psql -c "ALTER USER ${DB_USER} WITH PASSWORD '${DB_USER_PASSWOR
 
 
 
-# *** PostgreSQL configuration ***
-echo '********************************'
-echo '*** PostgreSQL configuration ***'
-echo '********************************'
+echo -e "${GREEN}********************************${NC}"
+echo -e "${GREEN}*** PostgreSQL configuration ***${NC}"
+echo -e "${GREEN}********************************${NC}"
 
 PG_HBA_PATH='/etc/postgresql/10/main/pg_hba.conf'
 
 if [[ ! -f ${PG_HBA_PATH} ]]; then
-    echo "${PG_HBA_PATH} file not found"
+    echo -e "${RED}${PG_HBA_PATH} file not found.${NC}"
 else
 
     echo "*** creating a backup of original pg_hba.conf ***"
@@ -79,7 +82,7 @@ else
     sudo sed -i "s/local   all             postgres                                peer/local   all             postgres                                trust/g" ${PG_HBA_PATH}
 
     if [[ $? > 0 ]]; then
-        echo "The command failed, exiting."
+        echo -e "${RED}The command failed, exiting.${NC}"
         exit 1
     else
         echo "The command ran succesfuly, continuing with script."
@@ -91,7 +94,7 @@ else
     sudo sed -i "s/host    all             all             127.0.0.1\/32            md5/host    all             all             0.0.0.0\/0               md5/g" ${PG_HBA_PATH}
 
     if [[ $? > 0 ]]; then
-        echo "The command failed, exiting."
+        echo -e "${RED}The command failed, exiting.${NC}"
         exit 1
     else
         echo "The command ran succesfuly, continuing with script."
@@ -105,7 +108,7 @@ echo '* restarting postgres *'
 sudo service postgresql restart
 
 if [[ $? > 0 ]]; then
-    echo "Some problem has occurred while restarting postgresql service, exiting."
+    echo -e "${RED}Some problem has occurred while restarting postgresql service, exiting.${NC}"
     exit 1
 else
     echo "postgresql service restarted successfully."
@@ -113,4 +116,4 @@ fi
 
 
 
-echo "Congrats! You just successfully built your own PostgreSQL server."
+echo -e "${GREEN}Congrats! You just successfully built your own PostgreSQL server.${NC}"
