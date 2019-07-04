@@ -45,17 +45,17 @@ fi
 # sudo -u postgres -i
 
 # create a PostgreSQL database user osm
-echo "Creating PostgreSQL database user `${DB_USER}`"
+echo "Creating PostgreSQL database user ${DB_USER}"
 sudo -u postgres createuser ${DB_USER}
 
 if [[ $? > 0 ]]; then
-    echo "*** Unable to create PostgreSQL user `${DB_USER}`."
+    echo "Unable to create PostgreSQL user ${DB_USER}."
     exit 1
 else
-    echo "*** PostgreSQL user `${DB_USER}` created succesfuly. ***"
+    echo "PostgreSQL user ${DB_USER} created succesfuly."
 fi
 
-echo "Setting password to `${DB_USER}` database user"
+echo "Setting password to ${DB_USER} database user"
 sudo -u postgres psql -c "ALTER USER ${DB_USER} WITH PASSWORD '${DB_USER_PASSWORD}';"
 
 
@@ -68,7 +68,7 @@ echo '********************************'
 PG_HBA_PATH='/etc/postgresql/10/main/pg_hba.conf'
 
 if [[ ! -f ${PG_HBA_PATH} ]]; then
-    echo "`${PG_HBA_PATH}` file not found"
+    echo "${PG_HBA_PATH} file not found"
 else
 
     echo "*** creating a backup of original pg_hba.conf ***"
