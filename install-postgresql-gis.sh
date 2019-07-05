@@ -164,7 +164,7 @@ else
     echo "Extension created successfully."
 fi
 
-echo "Creating postgis extension on $(${OSMDatabaseName}) database"
+echo "Creating postgis extension on ${OSMDatabaseName} database"
 sudo -u postgres -i psql -c "CREATE EXTENSION postgis;" -d ${OSMDatabaseName}
 
 if [[ $? > 0 ]]; then
@@ -183,7 +183,7 @@ echo -e "${GREEN}********************************${NC}"
 PG_HBA_PATH='/etc/postgresql/10/main/pg_hba.conf'
 
 if [[ ! -f ${PG_HBA_PATH} ]]; then
-    echo -e "${RED}$(${PG_HBA_PATH}) file not found.${NC}"
+    echo -e "${RED}${PG_HBA_PATH} file not found.${NC}"
     exit 1
 else
     echo 'Set osm user authentication mode to "trust" for local connections'
@@ -391,7 +391,7 @@ fi
 
 
 echo -e "${GREEN}*********************************************************${NC}"
-echo -e "${GREEN}*** Granting all privileges to $(${OSMUserName}) user ***${NC}"
+echo -e "${GREEN}*** Granting all privileges to ${OSMUserName} user ***${NC}"
 echo -e "${GREEN}*********************************************************${NC}"
 
 sudo -u postgres psql -c "GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO ${OSMUserName};" -d ${OSMDatabaseName}
@@ -425,7 +425,7 @@ cd ${OSMUserHome}/src/openstreetmap-carto
 
 
 echo 'running get-shapefiles.py'
-./scripts/get-shapefiles.py
+./scripts/get-shapefiles.py -su
 
 if [[ $? > 0 ]]; then
     echo -e "${RED}Unable to download shape files.${NC}"

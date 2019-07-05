@@ -25,6 +25,7 @@ WHITE='\033[1;37m'
 
 NC='\033[0m' # No Color
 
+echo -e "${CYAN}PATH:${NC} ${PATH}"
 echo -e "${CYAN}OSMUserName:${NC} ${OSMUserName}"
 echo -e "${CYAN}OSMDBPassword:${NC} ${OSMDBPassword}"
 echo -e "${CYAN}OSMDatabaseName:${NC} ${OSMDatabaseName}"
