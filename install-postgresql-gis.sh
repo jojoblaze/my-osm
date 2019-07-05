@@ -131,7 +131,7 @@ echo -e "${GREEN}*** Prepare system ***${NC}"
 echo -e "${GREEN}**********************${NC}"
 
 echo 'Updating the system'
-sudo apt-get update -y --fix-missing
+apt-get update -y --fix-missing
 #sudo apt-get upgrade -y
 
 echo 'Setting Frontend as Non-Interactive'
@@ -147,11 +147,32 @@ echo -e "${GREEN}*************************${NC}"
 echo "Creating database ${OSMDatabaseName}"
 sudo -u postgres -i createdb -E UTF8 -O ${OSMUserName} ${OSMDatabaseName}
 
+if [[ $? > 0 ]]; then
+    echo -e "${RED}Some problem has occurred while creating the database, exiting.${NC}"
+    exit 1
+else
+    echo "Database created successfully."
+fi
+
 echo "Creating hstore extension on the $(${OSMDatabaseName}) database"
 sudo -u postgres -i psql -c "CREATE EXTENSION hstore;" -d ${OSMDatabaseName}
 
+if [[ $? > 0 ]]; then
+    echo -e "${RED}Some problem has occurred while creating HSTORE extension, exiting.${NC}"
+    exit 1
+else
+    echo "Extension created successfully."
+fi
+
 echo "Creating postgis extension on $(${OSMDatabaseName}) database"
 sudo -u postgres -i psql -c "CREATE EXTENSION postgis;" -d ${OSMDatabaseName}
+
+if [[ $? > 0 ]]; then
+    echo -e "${RED}Some problem has occurred while creating POSTGIS extension, exiting.${NC}"
+    exit 1
+else
+    echo "Extension created successfully."
+fi
 
 
 
@@ -176,15 +197,24 @@ echo -e "${GREEN}*** Creating service user ***${NC}"
 echo -e "${GREEN}*****************************${NC}"
 
 # Create osm user on your operating system so the tile server can run as osm user.
-echo "creating operating system user $(${OSMUserName})"
+echo "creating operating system user ${OSMUserName}"
 #sudo adduser $OSMUserName --disabled-password --shell /bin/bash --gecos ""
-sudo useradd -m ${OSMUserName}
+# sudo useradd -m ${OSMUserName}
+useradd -m ${OSMUserName}
+
+if [[ $? > 0 ]]; then
+    echo -e "${RED}Some problem has occurred while creating service user, exiting.${NC}"
+    exit 1
+else
+    echo "Service user created successfully."
+fi
 
 
 
 echo -e "${GREEN}****************************${NC}"
 echo -e "${GREEN}*** Installing osm2pgsql ***${NC}"
 echo -e "${GREEN}****************************${NC}"
+
 if [[ ! -d ${OSMUserHome}/src ]]; then
 
     cd ${OSMUserHome}
@@ -200,7 +230,7 @@ git clone git://github.com/openstreetmap/osm2pgsql.git
 cd osm2pgsql
 
 echo 'Installing osm2pgsql dependecies'
-sudo apt-get install -y make cmake g++ libboost-dev libboost-system-dev libboost-filesystem-dev libexpat1-dev zlib1g-dev libbz2-dev libpq-dev libproj-dev lua5.2 liblua5.2-dev
+apt-get install -y make cmake g++ libboost-dev libboost-system-dev libboost-filesystem-dev libexpat1-dev zlib1g-dev libbz2-dev libpq-dev libproj-dev lua5.2 liblua5.2-dev
 
 if [[ $? > 0 ]]; then
     echo -e "${RED}Some error has occurred while installing osm2pgsql dependecies, exiting.${NC}"
@@ -211,17 +241,32 @@ fi
 
 echo 'Installing osm2pgsql'
 mkdir build && cd build
+
 cmake ..
+
+if [[ $? > 0 ]]; then
+    echo -e "${RED}cmake failed, exiting.${NC}"
+    exit 1
+else
+    echo -e "${CYAN}cmake${NC} ran succesfuly, continuing with script."
+fi
 
 make
 
-sudo make install
-
 if [[ $? > 0 ]]; then
-    echo "The command failed, exiting."
+    echo -e "${RED}make failed, exiting.${NC}"
     exit 1
 else
-    echo "The command ran succesfuly, continuing with script."
+    echo -e "${CYAN}make${NC} ran succesfuly, continuing with script."
+fi
+
+make install
+
+if [[ $? > 0 ]]; then
+    echo -e "${RED}make install failed, exiting.${NC}"
+    exit 1
+else
+    echo -e "${CYAN}make install${NC} ran succesfuly, continuing with script."
 fi
 
 
@@ -229,6 +274,7 @@ fi
 echo -e "${GREEN}*************************${NC}"
 echo -e "${GREEN}*** Download Map Data ***${NC}"
 echo -e "${GREEN}*************************${NC}"
+
 echo "downloading from ${MapDataUri}/${MapDataFileName}"
 # sudo su - $OSMUserName
 
@@ -269,16 +315,16 @@ wget -c ${MapDataUri}/${MapDataFileName}
 
 
 
-echo -e "${GREEN}***************************${NC}"
-echo -e "${GREEN}*** NodeJs Installation ***${NC}"
-echo -e "${GREEN}***************************${NC}"
-sudo apt-get install -y npm nodejs
+echo -e "${GREEN}*********************************${NC}"
+echo -e "${GREEN}*** NPM + NodeJs Installation ***${NC}"
+echo -e "${GREEN}*********************************${NC}"
+apt-get install -y npm nodejs
 
 if [[ $? > 0 ]]; then
-    echo -e "${RED}Unable to install NodeJs.${NC}"
+    echo -e "${RED}Unable to install NPM  or NodeJs.${NC}"
     exit 1
 else
-    echo "The command ran succesfuly, continuing with script."
+    echo "NPM and NodeJs installed succesfuly."
 fi
 
 
@@ -286,7 +332,7 @@ fi
 echo -e "${GREEN}**************************${NC}"
 echo -e "${GREEN}*** Carto Installation ***${NC}"
 echo -e "${GREEN}**************************${NC}"
-sudo npm install -g carto
+npm install -g carto
 
 if [[ $? > 0 ]]; then
     echo -e "${RED}Unable to install Carto.${NC}"
@@ -351,7 +397,7 @@ cd ${OSMUserHome}/src/openstreetmap-carto
 cd ${OSMUserHome}/src/openstreetmap-carto
 
 echo 'running get-shapefiles.py'
-sudo ./scripts/get-shapefiles.py --no-curl
+./scripts/get-shapefiles.py
 
 if [[ $? > 0 ]]; then
     echo -e "${RED}Unable to download shape files.${NC}"
@@ -361,7 +407,7 @@ else
 fi
 
 echo 'installing required fonts'
-sudo apt-get install -y fonts-noto-cjk fonts-noto-hinted fonts-noto-unhinted fonts-hanazono ttf-unifont
+apt-get install -y fonts-noto-cjk fonts-noto-hinted fonts-noto-unhinted fonts-hanazono ttf-unifont
 
 if [[ $? > 0 ]]; then
     echo -e "${RED}Unable to install fonts.${NC}"

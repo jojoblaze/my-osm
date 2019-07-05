@@ -53,7 +53,8 @@ export DEBIAN_FRONTEND=noninteractive
 echo -e "${GREEN}*******************************************************${NC}"
 echo -e "${GREEN}*** Install PostgreSQL Database Server with PostGIS ***${NC}"
 echo -e "${GREEN}*******************************************************${NC}"
-sudo apt-get install -y postgresql postgresql-contrib postgresql-client-common postgis postgresql-10-postgis-2.4 postgresql-10-postgis-scripts
+# sudo apt-get install -y postgresql postgresql-contrib postgresql-client-common postgis postgresql-10-postgis-2.4 postgresql-10-postgis-scripts
+apt-get install -y postgresql postgresql-contrib postgresql-client-common postgis postgresql-10-postgis-2.4 postgresql-10-postgis-scripts
 
 if [[ $? > 0 ]]; then
     echo -e "${RED}Some error has occurred installing PostgreSQL.${NC}"
@@ -96,7 +97,7 @@ else
 
     # Changing PostgreSQL authentication mode
     echo 'Set postgres user authentication mode to "trust" for local connections'
-    sudo sed -i "s/local   all             postgres                                peer/local   all             postgres                                trust/g" ${PG_HBA_PATH}
+    sed -i "s/local   all             postgres                                peer/local   all             postgres                                trust/g" ${PG_HBA_PATH}
 
     if [[ $? > 0 ]]; then
         echo -e "${RED}The command failed, exiting.${NC}"
@@ -106,7 +107,7 @@ else
 
 
     echo 'Allow remote connection from any ip'
-    sudo sed -i "s/host    all             all             127.0.0.1\/32            md5/host    all             all             0.0.0.0\/0               md5/g" ${PG_HBA_PATH}
+    sed -i "s/host    all             all             127.0.0.1\/32            md5/host    all             all             0.0.0.0\/0               md5/g" ${PG_HBA_PATH}
 
     if [[ $? > 0 ]]; then
         echo -e "${RED}The command failed, exiting.${NC}"
@@ -118,7 +119,7 @@ fi
 
 # restarting postgres
 echo 'restarting postgres'
-sudo service postgresql restart
+service postgresql restart
 
 if [[ $? > 0 ]]; then
     echo -e "${RED}Some problem has occurred while restarting postgresql service, exiting.${NC}"
