@@ -154,7 +154,7 @@ else
     echo "Database created successfully."
 fi
 
-echo "Creating hstore extension on the $(${OSMDatabaseName}) database"
+echo "Creating hstore extension on the ${OSMDatabaseName} database"
 sudo -u postgres -i psql -c "CREATE EXTENSION hstore;" -d ${OSMDatabaseName}
 
 if [[ $? > 0 ]]; then
@@ -371,6 +371,33 @@ carto project.mml | tee mapnik.xml
 
 
 
+echo -e "${GREEN}*****************************************${NC}"
+echo -e "${GREEN}*** Import the Map Data to PostgreSQL ***${NC}"
+echo -e "${GREEN}*****************************************${NC}"
+
+echo 'running osm2pgsql'
+# osm2pgsql -U postgres --slim -d ${OSMDatabaseName} -C 1800 --hstore --create -G --number-processes 1 ~/data/${MapDataFileName}
+osm2pgsql -U postgres --slim -d ${OSMDatabaseName} -C 1800 --hstore --tag-transform-script ${OSMUserHome}/src/openstreetmap-carto/openstreetmap-carto.lua --create -G --number-processes 1 -S ${OSMUserHome}/src/openstreetmap-carto/openstreetmap-carto.style ${OSMUserHome}/data/${MapDataFileName}
+
+# osm2pgsql -U $OSMUserName --slim -d ${OSMDatabaseName} -C 1800 --hstore --create -G --number-processes 1 ~/data/${MapDataFileName}
+# osm2pgsql -U postgres --slim -d ${OSMDatabaseName} -C 1800 --hstore -S ~/src/openstreetmap-carto/openstreetmap-carto.style --create -G --tag-transform-script ~/src/openstreetmap-carto/openstreetmap-carto.lua --number-processes 1  ~/data/${MapDataFileName}
+
+if [[ $? > 0 ]]; then
+    echo -e "${RED}some error has occurred running osm2pgsql.${NC}"
+    exit 1
+else
+    echo "osm2pgsql imported data successfully."
+fi
+
+
+echo -e "${GREEN}*********************************************************${NC}"
+echo -e "${GREEN}*** Granting all privileges to $(${OSMUserName}) user ***${NC}"
+echo -e "${GREEN}*********************************************************${NC}"
+
+sudo -u postgres psql -c "GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO ${OSMUserName};" -d ${OSMDatabaseName}
+
+
+
 echo -e "${GREEN}**************************${NC}"
 echo -e "${GREEN}*** Shapefile download ***${NC}"
 echo -e "${GREEN}**************************${NC}"
@@ -396,6 +423,7 @@ cd ${OSMUserHome}/src/openstreetmap-carto
 
 cd ${OSMUserHome}/src/openstreetmap-carto
 
+
 echo 'running get-shapefiles.py'
 ./scripts/get-shapefiles.py
 
@@ -415,35 +443,6 @@ if [[ $? > 0 ]]; then
 else
     echo "Fonts installed successfully."
 fi
-
-
-
-echo -e "${GREEN}*****************************************${NC}"
-echo -e "${GREEN}*** Import the Map Data to PostgreSQL ***${NC}"
-echo -e "${GREEN}*****************************************${NC}"
-
-echo 'running osm2pgsql'
-# osm2pgsql -U postgres --slim -d ${OSMDatabaseName} -C 1800 --hstore --create -G --number-processes 1 ~/data/${MapDataFileName}
-osm2pgsql -U postgres --slim -d ${OSMDatabaseName} -C 1800 --hstore --tag-transform-script ${OSMUserHome}/src/openstreetmap-carto/openstreetmap-carto.lua --create -G --number-processes 1 -S ${OSMUserHome}/src/openstreetmap-carto/openstreetmap-carto.style ${OSMUserHome}/data/${MapDataFileName}
-
-# osm2pgsql -U $OSMUserName --slim -d ${OSMDatabaseName} -C 1800 --hstore --create -G --number-processes 1 ~/data/${MapDataFileName}
-# osm2pgsql -U postgres --slim -d ${OSMDatabaseName} -C 1800 --hstore -S ~/src/openstreetmap-carto/openstreetmap-carto.style --create -G --tag-transform-script ~/src/openstreetmap-carto/openstreetmap-carto.lua --number-processes 1  ~/data/${MapDataFileName}
-
-if [[ $? > 0 ]]; then
-    echo -e "${RED}some error has occurred running osm2pgsql.${NC}"
-    exit 1
-else
-    echo "osm2pgsql imported data successfully."
-fi
-
-
-
-echo -e "${GREEN}*********************************************************${NC}"
-echo -e "${GREEN}*** Granting all privileges to $(${OSMUserName}) user ***${NC}"
-echo -e "${GREEN}*********************************************************${NC}"
-
-sudo -u postgres psql -c "GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO ${OSMUserName};" -d ${OSMDatabaseName}
-
 
 
 echo -e "${GREEN}Congrats! You just successfully built your own GIS OSM DB server.${NC}"
