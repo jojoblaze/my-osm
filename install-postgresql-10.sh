@@ -1,8 +1,6 @@
 #!/bin/sh
 
-#
-
-#——————————————————————————-
+#——————————————————————————————————————————————————————————————
 
 # Name:     install-postgresql-10.sh
 
@@ -10,7 +8,7 @@
 
 # Author:   Matteo Dello Ioio  https://github.com/jojoblaze
 
-#——————————————————————————-
+#——————————————————————————————————————————————————————————————
 
 DB_USER=$1
 DB_USER_PASSWORD=$2
@@ -88,20 +86,20 @@ echo "${GREEN}********************************${NC}"
 
 PG_HBA_PATH='/etc/postgresql/10/main/pg_hba.conf'
 
-if ! -f ${PG_HBA_PATH} ; then
-    echo -e "${RED}${PG_HBA_PATH} file not found.${NC}"
+if [ ! -f ${PG_HBA_PATH} ]; then
+    echo "${RED}${PG_HBA_PATH} file not found.${NC}"
     exit 1
 else
 
-    echo "*** creating a backup of original pg_hba.conf ***"
+    echo "creating a backup of original pg_hba.conf"
     cp ${PG_HBA_PATH} ${PG_HBA_PATH}.bck
 
     # Changing PostgreSQL authentication mode
     echo 'Set postgres user authentication mode to "trust" for local connections'
     sed -i "s/local   all             postgres                                peer/local   all             postgres                                trust/g" ${PG_HBA_PATH}
 
-    if [[ $? > 0 ]]; then
-        echo -e "${RED}The command failed, exiting.${NC}"
+    if $? > 0 ; then
+        echo "${RED}The command failed, exiting.${NC}"
         exit 1
     fi
 
@@ -122,8 +120,8 @@ fi
 echo 'restarting postgres'
 service postgresql restart
 
-if [[ $? > 0 ]]; then
-    echo -e "${RED}Some problem has occurred while restarting postgresql service, exiting.${NC}"
+if $? > 0 ; then
+    echo "${RED}Some problem has occurred while restarting postgresql service, exiting.${NC}"
     exit 1
 else
     echo "postgresql service restarted successfully."
