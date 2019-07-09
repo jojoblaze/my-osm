@@ -117,7 +117,7 @@ europe/italy/islands)
     MapDataUri=$MapDataUriItaly
     ;;
 *)
-    echo -e "${RED}Unkown country or territory${NC}"
+    echo "${RED}Unkown country or territory${NC}"
     exit 1
     ;;
 esac
@@ -147,7 +147,7 @@ echo "${GREEN}*************************${NC}"
 echo "Creating database ${OSMDatabaseName}"
 sudo -u postgres -i createdb -E UTF8 -O ${OSMUserName} ${OSMDatabaseName}
 
-if $? > 0 ; then
+if [ $? -ne 0 ]; then
     echo "${RED}Some problem has occurred while creating the database, exiting.${NC}"
     exit 1
 else
@@ -157,7 +157,7 @@ fi
 echo "Creating hstore extension on the ${OSMDatabaseName} database"
 sudo -u postgres -i psql -c "CREATE EXTENSION hstore;" -d ${OSMDatabaseName}
 
-if $? > 0 ; then
+if [ $? -ne 0 ]; then
     echo "${RED}Some problem has occurred while creating HSTORE extension, exiting.${NC}"
     exit 1
 else
@@ -167,7 +167,7 @@ fi
 echo "Creating postgis extension on ${OSMDatabaseName} database"
 sudo -u postgres -i psql -c "CREATE EXTENSION postgis;" -d ${OSMDatabaseName}
 
-if $? > 0 ; then
+if [ $? -ne 0 ]; then
     echo "${RED}Some problem has occurred while creating POSTGIS extension, exiting.${NC}"
     exit 1
 else
@@ -182,9 +182,9 @@ echo "${GREEN}********************************${NC}"
 
 PG_HBA_PATH='/etc/postgresql/10/main/pg_hba.conf'
 
-if [[ ! -e ${PG_HBA_PATH} ]]; then
+if [ ! -e ${PG_HBA_PATH} ]; then
     echo "${RED}${PG_HBA_PATH} file not found.${NC}"
-    exit 1
+    #exit 1
 else
     echo 'Set osm user authentication mode to "trust" for local connections'
     sudo sed -i "/^local   all             postgres                                trust/a local   all             $OSMUserName                                trust" ${PG_HBA_PATH}
@@ -202,7 +202,7 @@ echo "creating operating system user ${OSMUserName}"
 # sudo useradd -m ${OSMUserName}
 useradd -m ${OSMUserName}
 
-if $? > 0 ; then
+if [ $? -ne 0 ]; then
     echo "${RED}Some problem has occurred while creating service user, exiting.${NC}"
     exit 1
 else
@@ -232,7 +232,7 @@ cd osm2pgsql
 echo 'Installing osm2pgsql dependecies'
 apt-get install -y make cmake g++ libboost-dev libboost-system-dev libboost-filesystem-dev libexpat1-dev zlib1g-dev libbz2-dev libpq-dev libproj-dev lua5.2 liblua5.2-dev
 
-if $? > 0 ; then
+if [ $? -ne 0 ]; then
     echo "${RED}Some error has occurred while installing osm2pgsql dependecies, exiting.${NC}"
     exit 1
 else
@@ -244,7 +244,7 @@ mkdir build && cd build
 
 cmake ..
 
-if $? > 0 ; then
+if [ $? -ne 0 ]; then
     echo "${RED}cmake failed, exiting.${NC}"
     exit 1
 else
@@ -253,7 +253,7 @@ fi
 
 make
 
-if $? > 0 ; then
+if [ $? -ne 0 ]; then
     echo "${RED}make failed, exiting.${NC}"
     exit 1
 else
@@ -262,7 +262,7 @@ fi
 
 make install
 
-if $? > 0 ; then
+if [ $? -ne 0 ]; then
     echo "${RED}make install failed, exiting.${NC}"
     exit 1
 else
@@ -285,7 +285,7 @@ if ! -d ${OSMUserHome}/data ; then
     echo "creating ${OSMUserHome}/data folder"
     mkdir data
 
-    if [[ $? > 0 ]]; then
+    if [ $? -ne 0 ]; then
         echo "${RED}Unable to create ${OSMUserHome}/data folder.${NC}"
         exit 1
     else
@@ -320,7 +320,7 @@ echo "${GREEN}*** NPM + NodeJs Installation ***${NC}"
 echo "${GREEN}*********************************${NC}"
 apt-get install -y npm nodejs
 
-if $? > 0 ; then
+if [ $? -ne 0 ]; then
     echo "${RED}Unable to install NPM  or NodeJs.${NC}"
     exit 1
 else
@@ -334,7 +334,7 @@ echo "${GREEN}*** Carto Installation ***${NC}"
 echo "${GREEN}**************************${NC}"
 npm install -g carto
 
-if $? > 0 ; then
+if [ $? -ne 0 ]; then
     echo "${RED}Unable to install Carto.${NC}"
     exit 1
 else
@@ -356,7 +356,7 @@ cd ${OSMUserHome}/src
 echo "cloning openstreetmap-carto repository"
 git clone git://github.com/gravitystorm/openstreetmap-carto.git
 
-if $? > 0 ; then
+if [ $? -ne 0 ]; then
     echo "${RED}Unable to clone openstreetmap-carto repository.${NC}"
     exit 1
 else
@@ -382,7 +382,7 @@ osm2pgsql -U postgres --slim -d ${OSMDatabaseName} -C 1800 --hstore --tag-transf
 # osm2pgsql -U $OSMUserName --slim -d ${OSMDatabaseName} -C 1800 --hstore --create -G --number-processes 1 ~/data/${MapDataFileName}
 # osm2pgsql -U postgres --slim -d ${OSMDatabaseName} -C 1800 --hstore -S ~/src/openstreetmap-carto/openstreetmap-carto.style --create -G --tag-transform-script ~/src/openstreetmap-carto/openstreetmap-carto.lua --number-processes 1  ~/data/${MapDataFileName}
 
-if $? > 0 ; then
+if [ $? -ne 0 ]; then
     echo "${RED}some error has occurred running osm2pgsql.${NC}"
     exit 1
 else
@@ -427,7 +427,7 @@ cd ${OSMUserHome}/src/openstreetmap-carto
 echo 'running get-shapefiles.py'
 sh ./scripts/get-shapefiles.py
 
-if $? > 0 ; then
+if [ $? -ne 0 ]; then
     echo "${RED}Unable to download shape files.${NC}"
     exit 1
 else
@@ -437,7 +437,7 @@ fi
 echo 'installing required fonts'
 apt-get install -y fonts-noto-cjk fonts-noto-hinted fonts-noto-unhinted fonts-hanazono ttf-unifont
 
-if $? > 0 ; then
+if [ $? -ne 0 ]; then
     echo "${RED}Unable to install fonts.${NC}"
     exit 1
 else
