@@ -49,7 +49,7 @@ echo "${GREEN}****************************************${NC}"
 
 sh ./install-postgresql-10.sh ${OSMUserName} ${OSMDBPassword}
 
-if [ "$?" > 0 ]; then
+if [ "$?" != 0 ]; then
     echo "${RED}Something goes wrong in PostgreSQL installation.${NC}"
     exit 1
 else
@@ -58,7 +58,7 @@ fi
 
 sh ./install-postgresql-gis.sh ${OSMUserName} ${OSMDBPassword} ${OSMDatabaseName} ${OSMRegion}
 
-if [ "$?" > 0 ]; then
+if [ "$?" != 0 ]; then
     echo "${RED}Something goes wrong in PostgreGIS installation${NC}"
     exit 1
 else
@@ -67,7 +67,7 @@ fi
 
 sh ./install-osm-tile-server.sh ${OSMUserName}
 
-if [ "$?" > 0 ]; then
+if [ "$?" != 0 ]; then
     echo "${RED}Something goes wrong in webserver configuration${NC}"
     exit 1
 else
