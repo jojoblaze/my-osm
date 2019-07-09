@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 #
 
 #——————————————————————————-
@@ -39,10 +39,10 @@ NC='\033[0m' # No Color
 
 
 
-echo -e "${CYAN}OSMUserName:${NC} ${OSMUserName}"
-echo -e "${CYAN}OSMDBPassword:${NC} ${OSMDBPassword}"
-echo -e "${CYAN}OSMDatabaseName:${NC} ${OSMDatabaseName}"
-echo -e "${CYAN}OSMRegion:${NC} ${OSMRegion}"
+echo "${CYAN}OSMUserName:${NC} ${OSMUserName}"
+echo "${CYAN}OSMDBPassword:${NC} ${OSMDBPassword}"
+echo "${CYAN}OSMDatabaseName:${NC} ${OSMDatabaseName}"
+echo "${CYAN}OSMRegion:${NC} ${OSMRegion}"
 
 MapDataUri=http://download.geofabrik.de
 
@@ -126,9 +126,9 @@ esac
 
 OSMUserHome=/home/${OSMUserName}
 
-echo -e "${GREEN}**********************${NC}"
-echo -e "${GREEN}*** Prepare system ***${NC}"
-echo -e "${GREEN}**********************${NC}"
+echo "${GREEN}**********************${NC}"
+echo "${GREEN}*** Prepare system ***${NC}"
+echo "${GREEN}**********************${NC}"
 
 echo 'Updating the system'
 apt-get update -y --fix-missing
@@ -139,16 +139,16 @@ export DEBIAN_FRONTEND=noninteractive
 
 
 
-echo -e "${GREEN}*************************${NC}"
-echo -e "${GREEN}*** Creating database ***${NC}"
-echo -e "${GREEN}*************************${NC}"
+echo "${GREEN}*************************${NC}"
+echo "${GREEN}*** Creating database ***${NC}"
+echo "${GREEN}*************************${NC}"
 # sudo -u postgres -i
 
 echo "Creating database ${OSMDatabaseName}"
 sudo -u postgres -i createdb -E UTF8 -O ${OSMUserName} ${OSMDatabaseName}
 
-if [[ $? > 0 ]]; then
-    echo -e "${RED}Some problem has occurred while creating the database, exiting.${NC}"
+if $? > 0 ; then
+    echo "${RED}Some problem has occurred while creating the database, exiting.${NC}"
     exit 1
 else
     echo "Database created successfully."
@@ -157,8 +157,8 @@ fi
 echo "Creating hstore extension on the ${OSMDatabaseName} database"
 sudo -u postgres -i psql -c "CREATE EXTENSION hstore;" -d ${OSMDatabaseName}
 
-if [[ $? > 0 ]]; then
-    echo -e "${RED}Some problem has occurred while creating HSTORE extension, exiting.${NC}"
+if $? > 0 ; then
+    echo "${RED}Some problem has occurred while creating HSTORE extension, exiting.${NC}"
     exit 1
 else
     echo "Extension created successfully."
@@ -167,8 +167,8 @@ fi
 echo "Creating postgis extension on ${OSMDatabaseName} database"
 sudo -u postgres -i psql -c "CREATE EXTENSION postgis;" -d ${OSMDatabaseName}
 
-if [[ $? > 0 ]]; then
-    echo -e "${RED}Some problem has occurred while creating POSTGIS extension, exiting.${NC}"
+if $? > 0 ; then
+    echo "${RED}Some problem has occurred while creating POSTGIS extension, exiting.${NC}"
     exit 1
 else
     echo "Extension created successfully."
@@ -176,14 +176,14 @@ fi
 
 
 
-echo -e "${GREEN}********************************${NC}"
-echo -e "${GREEN}*** PostgreSQL configuration ***${NC}"
-echo -e "${GREEN}********************************${NC}"
+echo "${GREEN}********************************${NC}"
+echo "${GREEN}*** PostgreSQL configuration ***${NC}"
+echo "${GREEN}********************************${NC}"
 
 PG_HBA_PATH='/etc/postgresql/10/main/pg_hba.conf'
 
-if [[ ! -f ${PG_HBA_PATH} ]]; then
-    echo -e "${RED}${PG_HBA_PATH} file not found.${NC}"
+if ! -f ${PG_HBA_PATH} ; then
+    echo "${RED}${PG_HBA_PATH} file not found.${NC}"
     exit 1
 else
     echo 'Set osm user authentication mode to "trust" for local connections'
@@ -192,9 +192,9 @@ fi
 
 
 
-echo -e "${GREEN}*****************************${NC}"
-echo -e "${GREEN}*** Creating service user ***${NC}"
-echo -e "${GREEN}*****************************${NC}"
+echo "${GREEN}*****************************${NC}"
+echo "${GREEN}*** Creating service user ***${NC}"
+echo "${GREEN}*****************************${NC}"
 
 # Create osm user on your operating system so the tile server can run as osm user.
 echo "creating operating system user ${OSMUserName}"
@@ -202,8 +202,8 @@ echo "creating operating system user ${OSMUserName}"
 # sudo useradd -m ${OSMUserName}
 useradd -m ${OSMUserName}
 
-if [[ $? > 0 ]]; then
-    echo -e "${RED}Some problem has occurred while creating service user, exiting.${NC}"
+if $? > 0 ; then
+    echo "${RED}Some problem has occurred while creating service user, exiting.${NC}"
     exit 1
 else
     echo "Service user created successfully."
@@ -211,11 +211,11 @@ fi
 
 
 
-echo -e "${GREEN}****************************${NC}"
-echo -e "${GREEN}*** Installing osm2pgsql ***${NC}"
-echo -e "${GREEN}****************************${NC}"
+echo "${GREEN}****************************${NC}"
+echo "${GREEN}*** Installing osm2pgsql ***${NC}"
+echo "${GREEN}****************************${NC}"
 
-if [[ ! -d ${OSMUserHome}/src ]]; then
+if ! -d ${OSMUserHome}/src ; then
 
     cd ${OSMUserHome}
     echo "creating [${OSMUserHome}/src] folder"
@@ -232,8 +232,8 @@ cd osm2pgsql
 echo 'Installing osm2pgsql dependecies'
 apt-get install -y make cmake g++ libboost-dev libboost-system-dev libboost-filesystem-dev libexpat1-dev zlib1g-dev libbz2-dev libpq-dev libproj-dev lua5.2 liblua5.2-dev
 
-if [[ $? > 0 ]]; then
-    echo -e "${RED}Some error has occurred while installing osm2pgsql dependecies, exiting.${NC}"
+if $? > 0 ; then
+    echo "${RED}Some error has occurred while installing osm2pgsql dependecies, exiting.${NC}"
     exit 1
 else
     echo "osm2pgsql dependecies installed successfully."
@@ -244,41 +244,41 @@ mkdir build && cd build
 
 cmake ..
 
-if [[ $? > 0 ]]; then
-    echo -e "${RED}cmake failed, exiting.${NC}"
+if $? > 0 ; then
+    echo "${RED}cmake failed, exiting.${NC}"
     exit 1
 else
-    echo -e "${CYAN}cmake${NC} ran succesfuly, continuing with script."
+    echo "${CYAN}cmake${NC} ran succesfuly, continuing with script."
 fi
 
 make
 
-if [[ $? > 0 ]]; then
-    echo -e "${RED}make failed, exiting.${NC}"
+if $? > 0 ; then
+    echo "${RED}make failed, exiting.${NC}"
     exit 1
 else
-    echo -e "${CYAN}make${NC} ran succesfuly, continuing with script."
+    echo "${CYAN}make${NC} ran succesfuly, continuing with script."
 fi
 
 make install
 
-if [[ $? > 0 ]]; then
-    echo -e "${RED}make install failed, exiting.${NC}"
+if $? > 0 ; then
+    echo "${RED}make install failed, exiting.${NC}"
     exit 1
 else
-    echo -e "${CYAN}make install${NC} ran succesfuly, continuing with script."
+    echo "${CYAN}make install${NC} ran succesfuly, continuing with script."
 fi
 
 
 
-echo -e "${GREEN}*************************${NC}"
-echo -e "${GREEN}*** Download Map Data ***${NC}"
-echo -e "${GREEN}*************************${NC}"
+echo "${GREEN}*************************${NC}"
+echo "${GREEN}*** Download Map Data ***${NC}"
+echo "${GREEN}*************************${NC}"
 
 echo "downloading from ${MapDataUri}/${MapDataFileName}"
 # sudo su - $OSMUserName
 
-if [[ ! -d ${OSMUserHome}/data ]]; then
+if ! -d ${OSMUserHome}/data ; then
 
     cd ${OSMUserHome}
 
@@ -286,7 +286,7 @@ if [[ ! -d ${OSMUserHome}/data ]]; then
     mkdir data
 
     if [[ $? > 0 ]]; then
-        echo -e "${RED}Unable to create ${OSMUserHome}/data folder.${NC}"
+        echo "${RED}Unable to create ${OSMUserHome}/data folder.${NC}"
         exit 1
     else
         echo "Folder ${OSMUserHome}/data created successfully."
@@ -315,13 +315,13 @@ wget -c ${MapDataUri}/${MapDataFileName}
 
 
 
-echo -e "${GREEN}*********************************${NC}"
-echo -e "${GREEN}*** NPM + NodeJs Installation ***${NC}"
-echo -e "${GREEN}*********************************${NC}"
+echo "${GREEN}*********************************${NC}"
+echo "${GREEN}*** NPM + NodeJs Installation ***${NC}"
+echo "${GREEN}*********************************${NC}"
 apt-get install -y npm nodejs
 
-if [[ $? > 0 ]]; then
-    echo -e "${RED}Unable to install NPM  or NodeJs.${NC}"
+if $? > 0 ; then
+    echo "${RED}Unable to install NPM  or NodeJs.${NC}"
     exit 1
 else
     echo "NPM and NodeJs installed succesfuly."
@@ -329,13 +329,13 @@ fi
 
 
 
-echo -e "${GREEN}**************************${NC}"
-echo -e "${GREEN}*** Carto Installation ***${NC}"
-echo -e "${GREEN}**************************${NC}"
+echo "${GREEN}**************************${NC}"
+echo "${GREEN}*** Carto Installation ***${NC}"
+echo "${GREEN}**************************${NC}"
 npm install -g carto
 
-if [[ $? > 0 ]]; then
-    echo -e "${RED}Unable to install Carto.${NC}"
+if $? > 0 ; then
+    echo "${RED}Unable to install Carto.${NC}"
     exit 1
 else
     echo "Carto installed succesfuly."
@@ -344,9 +344,9 @@ fi
 
 
 
-echo -e "${GREEN}********************************${NC}"
-echo -e "${GREEN}*** Stylesheet configuration ***${NC}"
-echo -e "${GREEN}********************************${NC}"
+echo "${GREEN}********************************${NC}"
+echo "${GREEN}*** Stylesheet configuration ***${NC}"
+echo "${GREEN}********************************${NC}"
 cd ${OSMUserHome}/src
 
 # wget https://github.com/gravitystorm/openstreetmap-carto/archive/v4.21.1.tar.gz
@@ -356,8 +356,8 @@ cd ${OSMUserHome}/src
 echo "cloning openstreetmap-carto repository"
 git clone git://github.com/gravitystorm/openstreetmap-carto.git
 
-if [[ $? > 0 ]]; then
-    echo -e "${RED}Unable to clone openstreetmap-carto repository.${NC}"
+if $? > 0 ; then
+    echo "${RED}Unable to clone openstreetmap-carto repository.${NC}"
     exit 1
 else
     echo "openstreetmap-carto repository cloned successfully."
@@ -371,9 +371,9 @@ carto project.mml | tee mapnik.xml
 
 
 
-echo -e "${GREEN}*****************************************${NC}"
-echo -e "${GREEN}*** Import the Map Data to PostgreSQL ***${NC}"
-echo -e "${GREEN}*****************************************${NC}"
+echo "${GREEN}*****************************************${NC}"
+echo "${GREEN}*** Import the Map Data to PostgreSQL ***${NC}"
+echo "${GREEN}*****************************************${NC}"
 
 echo 'running osm2pgsql'
 # osm2pgsql -U postgres --slim -d ${OSMDatabaseName} -C 1800 --hstore --create -G --number-processes 1 ~/data/${MapDataFileName}
@@ -382,25 +382,25 @@ osm2pgsql -U postgres --slim -d ${OSMDatabaseName} -C 1800 --hstore --tag-transf
 # osm2pgsql -U $OSMUserName --slim -d ${OSMDatabaseName} -C 1800 --hstore --create -G --number-processes 1 ~/data/${MapDataFileName}
 # osm2pgsql -U postgres --slim -d ${OSMDatabaseName} -C 1800 --hstore -S ~/src/openstreetmap-carto/openstreetmap-carto.style --create -G --tag-transform-script ~/src/openstreetmap-carto/openstreetmap-carto.lua --number-processes 1  ~/data/${MapDataFileName}
 
-if [[ $? > 0 ]]; then
-    echo -e "${RED}some error has occurred running osm2pgsql.${NC}"
+if $? > 0 ; then
+    echo "${RED}some error has occurred running osm2pgsql.${NC}"
     exit 1
 else
     echo "osm2pgsql imported data successfully."
 fi
 
 
-echo -e "${GREEN}*********************************************************${NC}"
-echo -e "${GREEN}*** Granting all privileges to ${OSMUserName} user ***${NC}"
-echo -e "${GREEN}*********************************************************${NC}"
+echo "${GREEN}******************************************************${NC}"
+echo "${GREEN}*** Granting all privileges to ${OSMUserName} user ***${NC}"
+echo "${GREEN}******************************************************${NC}"
 
 sudo -u postgres psql -c "GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO ${OSMUserName};" -d ${OSMDatabaseName}
 
 
 
-echo -e "${GREEN}**************************${NC}"
-echo -e "${GREEN}*** Shapefile download ***${NC}"
-echo -e "${GREEN}**************************${NC}"
+echo "${GREEN}**************************${NC}"
+echo "${GREEN}*** Shapefile download ***${NC}"
+echo "${GREEN}**************************${NC}"
 
 cd ${OSMUserHome}/src/openstreetmap-carto
 
@@ -425,10 +425,10 @@ cd ${OSMUserHome}/src/openstreetmap-carto
 
 
 echo 'running get-shapefiles.py'
-./scripts/get-shapefiles.py -su
+sh ./scripts/get-shapefiles.py
 
-if [[ $? > 0 ]]; then
-    echo -e "${RED}Unable to download shape files.${NC}"
+if $? > 0 ; then
+    echo "${RED}Unable to download shape files.${NC}"
     exit 1
 else
     echo "Shape files downloaded successfully."
@@ -437,12 +437,12 @@ fi
 echo 'installing required fonts'
 apt-get install -y fonts-noto-cjk fonts-noto-hinted fonts-noto-unhinted fonts-hanazono ttf-unifont
 
-if [[ $? > 0 ]]; then
-    echo -e "${RED}Unable to install fonts.${NC}"
+if $? > 0 ; then
+    echo "${RED}Unable to install fonts.${NC}"
     exit 1
 else
     echo "Fonts installed successfully."
 fi
 
 
-echo -e "${GREEN}Congrats! You just successfully built your own GIS OSM DB server.${NC}"
+echo "${GREEN}Congrats! You just successfully built your own GIS OSM DB server.${NC}"

@@ -1,4 +1,5 @@
-#!/bin/bash
+#!/bin/sh
+
 OSMUserName=$1
 OSMDBPassword=$2
 OSMDatabaseName=$3
@@ -36,7 +37,7 @@ echo -e "${GREEN}****************************************${NC}"
 echo -e "${GREEN}*** OpenStreetMap Custom Tile Server ***${NC}"
 echo -e "${GREEN}****************************************${NC}"
 
-./install-postgresql-10.sh ${OSMUserName} ${OSMDBPassword}
+sh ./install-postgresql-10.sh ${OSMUserName} ${OSMDBPassword}
 
 if [[ $? > 0 ]]; then
     echo -e "${RED}Something goes wrong in PostgreSQL installation.${NC}"
@@ -45,7 +46,7 @@ else
     echo -e "${GREEN}PostgreSQL installation successfully.${NC}"
 fi
 
-./install-postgresql-gis.sh ${OSMUserName} ${OSMDBPassword} ${OSMDatabaseName} ${OSMRegion}
+sh ./install-postgresql-gis.sh ${OSMUserName} ${OSMDBPassword} ${OSMDatabaseName} ${OSMRegion}
 
 if [[ $? > 0 ]]; then
     echo -e "${RED}Something goes wrong in PostgreGIS installation${NC}"
@@ -54,7 +55,7 @@ else
     echo -e "${GREEN}PostgreGIS installation successfully${NC}"
 fi
 
-./install-osm-tile-server.sh ${OSMUserName}
+sh ./install-osm-tile-server.sh ${OSMUserName}
 
 if [[ $? > 0 ]]; then
     echo -e "${RED}Something goes wrong in webserver configuration${NC}"

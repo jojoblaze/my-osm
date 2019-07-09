@@ -1,4 +1,5 @@
-#!/bin/bash
+#!/bin/sh
+
 #
 
 #——————————————————————————-
@@ -37,27 +38,27 @@ NC='\033[0m' # No Color
 
 
 
-echo -e "${GREEN}****************************${NC}"
-echo -e "${GREEN}*** Preparing the system ***${NC}"
-echo -e "${GREEN}****************************${NC}"
+echo "${GREEN}****************************${NC}"
+echo "${GREEN}*** Preparing the system ***${NC}"
+echo "${GREEN}****************************${NC}"
 
 echo 'Updating the system'
 sudo apt-get update -y --fix-missing
 #sudo apt-get upgrade -y
 
-echo '* Setting Frontend as Non-Interactive *'
+echo 'Setting Frontend as Non-Interactive'
 export DEBIAN_FRONTEND=noninteractive
 
 
 
-echo -e "${GREEN}*******************************************************${NC}"
-echo -e "${GREEN}*** Install PostgreSQL Database Server with PostGIS ***${NC}"
-echo -e "${GREEN}*******************************************************${NC}"
+echo "${GREEN}*******************************************************${NC}"
+echo "${GREEN}*** Install PostgreSQL Database Server with PostGIS ***${NC}"
+echo "${GREEN}*******************************************************${NC}"
 # sudo apt-get install -y postgresql postgresql-contrib postgresql-client-common postgis postgresql-10-postgis-2.4 postgresql-10-postgis-scripts
 apt-get install -y postgresql postgresql-contrib postgresql-client-common postgis postgresql-10-postgis-2.4 postgresql-10-postgis-scripts
 
-if [[ $? > 0 ]]; then
-    echo -e "${RED}Some error has occurred installing PostgreSQL.${NC}"
+if $? > 0 ; then
+    echo "${RED}Some error has occurred installing PostgreSQL.${NC}"
     exit 1
 else
     echo "PostgreSQL installed succesfuly."
@@ -69,8 +70,8 @@ fi
 echo "Creating PostgreSQL database user ${DB_USER}"
 sudo -u postgres createuser ${DB_USER}
 
-if [[ $? > 0 ]]; then
-    echo -e "${RED}Unable to create PostgreSQL user ${DB_USER}.${NC}"
+if $? > 0 ; then
+    echo "${RED}Unable to create PostgreSQL user ${DB_USER}.${NC}"
     exit 1
 else
     echo "PostgreSQL user ${DB_USER} created succesfuly."
@@ -81,13 +82,13 @@ sudo -u postgres psql -c "ALTER USER ${DB_USER} WITH PASSWORD '${DB_USER_PASSWOR
 
 
 
-echo -e "${GREEN}********************************${NC}"
-echo -e "${GREEN}*** PostgreSQL configuration ***${NC}"
-echo -e "${GREEN}********************************${NC}"
+echo "${GREEN}********************************${NC}"
+echo "${GREEN}*** PostgreSQL configuration ***${NC}"
+echo "${GREEN}********************************${NC}"
 
 PG_HBA_PATH='/etc/postgresql/10/main/pg_hba.conf'
 
-if [[ ! -f ${PG_HBA_PATH} ]]; then
+if ! -f ${PG_HBA_PATH} ; then
     echo -e "${RED}${PG_HBA_PATH} file not found.${NC}"
     exit 1
 else
@@ -109,8 +110,8 @@ else
     echo 'Allow remote connection from any ip'
     sed -i "s/host    all             all             127.0.0.1\/32            md5/host    all             all             0.0.0.0\/0               md5/g" ${PG_HBA_PATH}
 
-    if [[ $? > 0 ]]; then
-        echo -e "${RED}The command failed, exiting.${NC}"
+    if $? > 0 ; then
+        echo "${RED}The command failed, exiting.${NC}"
         exit 1
     fi
 fi
@@ -130,4 +131,4 @@ fi
 
 
 
-echo -e "${GREEN}Congrats! You just successfully built your own PostgreSQL server.${NC}"
+echo "${GREEN}Congrats! You just successfully built your own PostgreSQL server.${NC}"
