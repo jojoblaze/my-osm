@@ -56,7 +56,7 @@ echo "${GREEN}*******************************************************${NC}"
 apt-get install -y postgresql postgresql-contrib postgresql-client-common postgis postgresql-10-postgis-2.4 postgresql-10-postgis-scripts
 
 if test "$?" > 0 ; then
-    echo "${RED}Some error has occurred installing PostgreSQL.${NC}"
+    echo "${RED}Some error has occurred installing PostgreSQL packages.${NC}"
     exit 1
 else
     echo "${GREEN}PostgreSQL packages installed succesfuly.${NC}"
