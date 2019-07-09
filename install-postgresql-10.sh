@@ -59,7 +59,7 @@ if $? > 0 ; then
     echo "${RED}Some error has occurred installing PostgreSQL.${NC}"
     exit 1
 else
-    echo "PostgreSQL installed succesfuly."
+    echo "${GREEN}PostgreSQL packages installed succesfuly.${NC}"
 fi
 
 # sudo -u postgres -i
@@ -69,10 +69,10 @@ echo "Creating PostgreSQL database user ${DB_USER}"
 sudo -u postgres createuser ${DB_USER}
 
 if $? > 0 ; then
-    echo "${RED}Unable to create PostgreSQL user ${DB_USER}.${NC}"
+    echo "${RED}Unable to create PostgreSQL user '${DB_USER}'.${NC}"
     exit 1
 else
-    echo "PostgreSQL user ${DB_USER} created succesfuly."
+    echo "${GREEN}PostgreSQL user '${DB_USER}' created succesfuly.${NC}"
 fi
 
 echo "Setting password to ${DB_USER} database user"
@@ -86,7 +86,7 @@ echo "${GREEN}********************************${NC}"
 
 PG_HBA_PATH='/etc/postgresql/10/main/pg_hba.conf'
 
-if [ ! -f ${PG_HBA_PATH} ]; then
+if [[ ! -e ${PG_HBA_PATH} ]]; then
     echo "${RED}${PG_HBA_PATH} file not found.${NC}"
     exit 1
 else
@@ -124,7 +124,7 @@ if $? > 0 ; then
     echo "${RED}Some problem has occurred while restarting postgresql service, exiting.${NC}"
     exit 1
 else
-    echo "postgresql service restarted successfully."
+    echo "${GREEN}postgresql service restarted successfully.${NC}"
 fi
 
 
