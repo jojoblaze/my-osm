@@ -55,7 +55,7 @@ echo "${GREEN}*******************************************************${NC}"
 # sudo apt-get install -y postgresql postgresql-contrib postgresql-client-common postgis postgresql-10-postgis-2.4 postgresql-10-postgis-scripts
 apt-get install -y postgresql postgresql-contrib postgresql-client-common postgis postgresql-10-postgis-2.4 postgresql-10-postgis-scripts
 
-if $? > 0 ; then
+if test "$?" > 0 ; then
     echo "${RED}Some error has occurred installing PostgreSQL.${NC}"
     exit 1
 else
@@ -68,7 +68,7 @@ fi
 echo "Creating PostgreSQL database user ${DB_USER}"
 sudo -u postgres createuser ${DB_USER}
 
-if $? > 0 ; then
+if test "$?" > 0 ; then
     echo "${RED}Unable to create PostgreSQL user '${DB_USER}'.${NC}"
     exit 1
 else
@@ -98,7 +98,7 @@ else
     echo 'Set postgres user authentication mode to "trust" for local connections'
     sed -i "s/local   all             postgres                                peer/local   all             postgres                                trust/g" ${PG_HBA_PATH}
 
-    if $? > 0 ; then
+    if test "$?" > 0 ; then
         echo "${RED}The command failed, exiting.${NC}"
         exit 1
     fi
@@ -108,7 +108,7 @@ else
     echo 'Allow remote connection from any ip'
     sed -i "s/host    all             all             127.0.0.1\/32            md5/host    all             all             0.0.0.0\/0               md5/g" ${PG_HBA_PATH}
 
-    if $? > 0 ; then
+    if test "$?" > 0 ; then
         echo "${RED}The command failed, exiting.${NC}"
         exit 1
     fi
@@ -120,7 +120,7 @@ fi
 echo 'restarting postgres'
 service postgresql restart
 
-if $? > 0 ; then
+if test "$?" > 0 ; then
     echo "${RED}Some problem has occurred while restarting postgresql service, exiting.${NC}"
     exit 1
 else
