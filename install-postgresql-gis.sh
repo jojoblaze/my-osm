@@ -215,7 +215,7 @@ echo "${GREEN}****************************${NC}"
 echo "${GREEN}*** Installing osm2pgsql ***${NC}"
 echo "${GREEN}****************************${NC}"
 
-if ! -d ${OSMUserHome}/src ; then
+if [ ! -d ${OSMUserHome}/src ]; then
 
     cd ${OSMUserHome}
     echo "creating [${OSMUserHome}/src] folder"
@@ -278,7 +278,7 @@ echo "${GREEN}*************************${NC}"
 echo "downloading from ${MapDataUri}/${MapDataFileName}"
 # sudo su - $OSMUserName
 
-if ! -d ${OSMUserHome}/data ; then
+if [ ! -d ${OSMUserHome}/data ]; then
 
     cd ${OSMUserHome}
 
@@ -425,7 +425,7 @@ cd ${OSMUserHome}/src/openstreetmap-carto
 
 
 echo 'running get-shapefiles.py'
-sh ./scripts/get-shapefiles.py
+python ./scripts/get-shapefiles.py
 
 if [ $? -ne 0 ]; then
     echo "${RED}Unable to download shape files.${NC}"

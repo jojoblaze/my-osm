@@ -86,7 +86,7 @@ echo "${GREEN}********************************${NC}"
 
 PG_HBA_PATH='/etc/postgresql/10/main/pg_hba.conf'
 
-if [[ ! -e ${PG_HBA_PATH} ]]; then
+if [ ! -e ${PG_HBA_PATH} ]; then
     echo "${RED}File ${PG_HBA_PATH} not found.${NC}"
     exit 1
 else

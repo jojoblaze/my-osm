@@ -41,9 +41,9 @@ echo 'Installing Mapnik dependecies'
 sudo apt-get install -y libboost-all-dev git-core tar unzip wget bzip2 build-essential autoconf libtool libxml2-dev libgeos-dev libgeos++-dev libpq-dev libbz2-dev libproj-dev munin-node munin libprotobuf-c0-dev protobuf-c-compiler libfreetype6-dev libtiff5-dev libicu-dev libgdal-dev libcairo-dev libcairomm-1.0-dev apache2 apache2-dev libagg-dev liblua5.2-dev ttf-unifont lua5.1 liblua5.1-dev libgeotiff-epsg curl
 # sudo apt-get install -y libmapnik3.0 libmapnik-dev mapnik-utils python-mapnik autoconf apache2-dev
 
-if $? > 0 ; then
+if [ "$?" -ne 0 ]; then
     echo "The command failed, exiting."
-    exit
+    exit 1
 else
     echo "The command ran succesfuly, continuing with script."
 fi
@@ -60,9 +60,9 @@ sudo apt-get install -y autoconf apache2-dev libtool libxml2-dev libbz2-dev libg
 echo 'Testing python mapnik...'
 python -c "import mapnik"
 
-if $? > 0 ; then
+if [ "$?" -ne 0 ]; then
     echo "The command failed, exiting."
-    exit
+    exit 1
 else
     echo "The command ran succesfuly, continuing with script."
 fi
@@ -84,7 +84,7 @@ echo 'current user: '$(whoami)
 cd ~
 echo 'current user home directory: '$(pwd)
 
-if ! -d $OSMUserHome/src ; then
+if [ ! -d $OSMUserHome/src ]; then
     mkdir $OSMUserHome/src
 
     # set OSM user owner
@@ -103,45 +103,45 @@ cd mod_tile
 echo 'Running autogen'
 ./autogen.sh
 
-if $? > 0 ; then
+if [ "$?" -ne 0 ]; then
     echo "The command failed, exiting."
-    exit
+    exit 1
 else
     echo "The command ran succesfuly, continuing with script."
 fi
 
 ./configure
 
-if $? > 0 ; then
+if [ "$?" -ne 0 ]; then
     echo "The command failed, exiting."
-    exit
+    exit 1
 else
     echo "The command ran succesfuly, continuing with script."
 fi
 
 make
 
-if $? > 0 ; then
+if [ "$?" -ne 0 ]; then
     echo "The command failed, exiting."
-    exit
+    exit 1
 else
     echo "The command ran succesfuly, continuing with script."
 fi
 
 sudo make renderd
 
-if $? > 0 ; then
+if [ "$?" -ne 0 ]; then
     echo "The command failed, exiting."
-    exit
+    exit 1
 else
     echo "The command ran succesfuly, continuing with script."
 fi
 
 sudo make install
 
-if $? > 0 ; then
+if [ "$?" -ne 0 ]; then
     echo "The command failed, exiting."
-    exit
+    exit 1
 else
     echo "The command ran succesfuly, continuing with script."
 fi
@@ -149,9 +149,9 @@ fi
 echo 'Running make install-mod_tile...'
 sudo make install-mod_tile
 
-if $? > 0 ; then
+if [ "$?" -ne 0 ]; then
     echo "The command failed, exiting."
-    exit
+    exit 1
 else
     echo "The command ran succesfuly, continuing with script."
 fi
@@ -172,8 +172,9 @@ RENDERD_CONF_PATH=$OSMUserHome/src/mod_tile/renderd.conf
 # RENDERD_CONF_PATH='/usr/local/etc/renderd.conf'
 # RENDERD_CONF_PATH='/home/osm/src/mod_tile/debian/renderd.conf'
 
-if ! -f $RENDERD_CONF_PATH ; then
+if [ ! -f $RENDERD_CONF_PATH ]; then
     echo "File $RENDERD_CONF_PATH not found"
+    exit 1
 else
 
     echo 'Replacing the value of num_threads [default] section'
@@ -211,8 +212,9 @@ fi
 # Install renderd init script by copying the sample init script.
 echo 'Install renderd init script by copying the sample init script'
 
-if ! -f $OSMUserHome/src/mod_tile/debian/renderd.init ; then
+if [ ! -f $OSMUserHome/src/mod_tile/debian/renderd.init ]; then
     echo "File [$OSMUserHome/src/mod_tile/renderd.init] not found."
+    exit 1
 else
     sudo cp $OSMUserHome/src/mod_tile/debian/renderd.init /etc/init.d/renderd
 
@@ -249,7 +251,7 @@ sudo chown -R $OSMUserName /var/run/renderd
 
 
 MOD_TILE_LIB_PATH=/usr/lib/apache2/modules/mod_tile.so
-if ! -f $MOD_TILE_LIB_PATH ; then
+if [ ! -f $MOD_TILE_LIB_PATH ]; then
     echo "File [$MOD_TILE_LIB_PATH] not found."
     exit 1
 else
@@ -259,9 +261,9 @@ else
     echo 'enabling mod_tile module'
     sudo a2enconf mod_tile
 
-    if $? > 0 ; then
+    if [ "$?" -ne 0 ]; then
         echo "The command failed, exiting."
-        exit
+        exit 1
     else
         echo "The command ran succesfuly, continuing with script."
     fi
@@ -273,7 +275,7 @@ fi
 cd $OSMUserHome/src
 wget https://raw.githubusercontent.com/jojoblaze/my-osm/master/000-default.conf
 
-if $? > 0 ; then
+if [ "$?" -ne 0 ]; then
     echo "Some error has occurred while downloading Apache virtual host configuration."
     exit 1
 else
@@ -287,9 +289,9 @@ mv 000-default.conf /etc/apache2/sites-available/000-default.conf
 echo 'start renderd service'
 sudo systemctl daemon-reload
 
-if $? > 0 ; then
+if [ "$?" -ne 0 ]; then
     echo "The command failed, exiting."
-    exit
+    exit 1
 else
     echo "The command ran succesfuly, continuing with script."
 fi
@@ -297,9 +299,9 @@ fi
 echo 'starting renderd'
 sudo systemctl start renderd
 
-if $? > 0 ; then
+if [ "$?" -ne 0 ]; then
     echo "The command failed, exiting."
-    exit
+    exit 1
 else
     echo "The command ran succesfuly, continuing with script."
 fi
@@ -307,9 +309,9 @@ fi
 echo 'enabling renderd'
 sudo systemctl enable renderd
 
-if $? > 0 ; then
+if [ "$?" -ne 0 ]; then
     echo "The command failed, exiting."
-    exit
+    exit 1
 else
     echo "The command ran succesfuly, continuing with script."
 fi
@@ -318,9 +320,9 @@ fi
 echo 'Restart Apache.'
 sudo systemctl restart apache2
 
-if $? > 0 ; then
+if [ "$?" -ne 0 ]; then
     echo "The command failed, exiting."
-    exit
+    exit 1
 else
     echo "The command ran succesfuly, continuing with script."
 fi
