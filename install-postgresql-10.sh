@@ -55,7 +55,7 @@ echo "${GREEN}*******************************************************${NC}"
 # sudo apt-get install -y postgresql postgresql-contrib postgresql-client-common postgis postgresql-10-postgis-2.4 postgresql-10-postgis-scripts
 apt-get install -y postgresql postgresql-contrib postgresql-client-common postgis postgresql-10-postgis-2.4 postgresql-10-postgis-scripts
 
-if test "$?" > 0 ; then
+if [ "$?" != 0 ]; then
     echo "${RED}Some error has occurred installing PostgreSQL packages.${NC}"
     exit 1
 else
@@ -68,7 +68,7 @@ fi
 echo "Creating PostgreSQL database user ${DB_USER}"
 sudo -u postgres createuser ${DB_USER}
 
-if test "$?" > 0 ; then
+if [ "$?" != 0 ]; then
     echo "${RED}Unable to create PostgreSQL user '${DB_USER}'.${NC}"
     exit 1
 else
@@ -87,7 +87,7 @@ echo "${GREEN}********************************${NC}"
 PG_HBA_PATH='/etc/postgresql/10/main/pg_hba.conf'
 
 if [[ ! -e ${PG_HBA_PATH} ]]; then
-    echo "${RED}${PG_HBA_PATH} file not found.${NC}"
+    echo "${RED}File ${PG_HBA_PATH} not found.${NC}"
     exit 1
 else
 
