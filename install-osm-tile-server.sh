@@ -382,4 +382,4 @@ wget https://raw.githubusercontent.com/jojoblaze/my-osm/master/map.html
 
 echo 'Go in your web browser address bar, type: your-server-ip/osm_tiles/0/0/0.png'
 
-echo "${GREEN}Congrats! You just successfully built your own OSM tile server.${NC}""
+echo "${GREEN}Congrats! You just successfully built your own OSM tile server.${NC}"
