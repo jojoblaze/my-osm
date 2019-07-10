@@ -380,6 +380,6 @@ echo 'Copying map file under /var/www/html'
 cd /var/www/html/
 wget https://raw.githubusercontent.com/jojoblaze/my-osm/master/map.html
 
-echo 'Go in your web browser address bar, type: your-server-ip/osm_tiles/0/0/0.png'
+echo 'Go in your web browser address bar, type: your-server-ip/hot/0/0/0.png'
 
 echo "${GREEN}Congrats! You just successfully built your own OSM tile server.${NC}"
