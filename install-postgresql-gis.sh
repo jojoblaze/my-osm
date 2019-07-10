@@ -398,51 +398,6 @@ sudo -u postgres psql -c "GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO
 
 
 
-echo "${GREEN}**************************${NC}"
-echo "${GREEN}*** Shapefile download ***${NC}"
-echo "${GREEN}**************************${NC}"
-
-cd ${OSMUserHome}/src/openstreetmap-carto
-
-# # directory 'data' is created by script get-shapefiles.py
-# # I need to create it before launch the script in order to give it right permissions
-# if [[ ! -d ./data ]]; then
-
-#     # create data directory
-#     mkdir data
-
-#     if [[ $? > 0 ]]; then
-#         echo -e "${RED}Unable to create [${OSMUserHome}/src/openstreetmap-carto/data] folder.${NC}"
-#         exit 1
-#     else
-#         echo "Folder ${OSMUserHome}/src/openstreetmap-carto/data created successfully."
-#     fi
-
-#     chown -R ${OSMUserName} data
-# fi
-
-cd ${OSMUserHome}/src/openstreetmap-carto
-
-
-echo 'running get-shapefiles.py'
-python ./scripts/get-shapefiles.py
-
-if [ $? -ne 0 ]; then
-    echo "${RED}Unable to download shape files.${NC}"
-    exit 1
-else
-    echo "Shape files downloaded successfully."
-fi
-
-echo 'installing required fonts'
-apt-get install -y fonts-noto-cjk fonts-noto-hinted fonts-noto-unhinted fonts-hanazono ttf-unifont
-
-if [ $? -ne 0 ]; then
-    echo "${RED}Unable to install fonts.${NC}"
-    exit 1
-else
-    echo "Fonts installed successfully."
-fi
 
 
 echo "${GREEN}Congrats! You just successfully built your own GIS OSM DB server.${NC}"
