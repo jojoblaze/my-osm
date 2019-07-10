@@ -30,7 +30,7 @@
                   ]
             };
         map = new OpenLayers.Map("basicMap",options);
-        var newL = new OpenLayers.Layer.OSM("Default", "/osm_tiles2/${z}/${x}/${y}.png", {numZoomLevels: 19});
+        var newL = new OpenLayers.Layer.OSM("Default", "/hot/${z}/${x}/${y}.png", {numZoomLevels: 19});
         map.addLayer(newL);
         map.zoomIn();
       }
