@@ -37,7 +37,7 @@ echo "${GREEN}**********************${NC}"
 
 
 echo 'Installing Mapnik dependecies'
-sudo apt-get install -y libboost-all-dev git-core tar unzip wget bzip2 build-essential autoconf libtool libxml2-dev libgeos-dev libgeos++-dev libpq-dev libbz2-dev libproj-dev munin-node munin libprotobuf-c0-dev protobuf-c-compiler libfreetype6-dev libtiff5-dev libicu-dev libgdal-dev libcairo-dev libcairomm-1.0-dev apache2 apache2-dev libagg-dev liblua5.2-dev ttf-unifont lua5.1 liblua5.1-dev libgeotiff-epsg curl
+sudo apt-get install -y libboost-all-dev git-core tar unzip wget bzip2 build-essential autoconf libtool libxml2-dev libgeos-dev libgeos++-dev libpq-dev libbz2-dev libproj-dev munin-node munin libprotobuf-c0-dev protobuf-c-compiler libfreetype6-dev libtiff5-dev libicu-dev libgdal-dev libcairo-dev libcairomm-1.0-dev apache2-dev libagg-dev liblua5.2-dev ttf-unifont lua5.1 liblua5.1-dev libgeotiff-epsg
 # sudo apt-get install -y libmapnik3.0 libmapnik-dev mapnik-utils python-mapnik autoconf apache2-dev
 
 if [ "$?" -ne 0 ]; then
@@ -74,22 +74,6 @@ echo "${GREEN}**************************${NC}"
 
 cd ${OSMUserHome}/src/openstreetmap-carto
 
-# # directory 'data' is created by script get-shapefiles.py
-# # I need to create it before launch the script in order to give it right permissions
-# if [[ ! -d ./data ]]; then
-
-#     # create data directory
-#     mkdir data
-
-#     if [[ $? > 0 ]]; then
-#         echo -e "${RED}Unable to create [${OSMUserHome}/src/openstreetmap-carto/data] folder.${NC}"
-#         exit 1
-#     else
-#         echo "Folder ${OSMUserHome}/src/openstreetmap-carto/data created successfully."
-#     fi
-
-#     chown -R ${OSMUserName} data
-# fi
 
 cd ${OSMUserHome}/src/openstreetmap-carto
 
@@ -319,19 +303,6 @@ else
 fi
 
 
-# Replace default virtual host file
-cd $OSMUserHome/src
-wget https://raw.githubusercontent.com/jojoblaze/my-osm/master/000-default.conf
-
-if [ "$?" -ne 0 ]; then
-    echo "Some error has occurred while downloading Apache virtual host configuration."
-    exit 1
-else
-    echo "Apache virtual host configuration downloaded successfully."
-fi
-
-
-mv 000-default.conf /etc/apache2/sites-available/000-default.conf
 
 # start renderd service
 echo 'start renderd service'
@@ -378,7 +349,7 @@ fi
 # Copy map file
 echo 'Copying map file under /var/www/html'
 cd /var/www/html/
-wget https://raw.githubusercontent.com/jojoblaze/my-osm/master/map.html
+wget https://raw.githubusercontent.com/jojoblaze/my-osm/development/map.html
 
 echo 'Go in your web browser address bar, type: your-server-ip/hot/0/0/0.png'
 

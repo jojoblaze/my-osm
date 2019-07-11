@@ -38,10 +38,10 @@ echo "${GREEN}***********************${NC}"
 echo "${GREEN}*** Install Apache2 ***${NC}"
 echo "${GREEN}***********************${NC}"
 
-sudo apt-get install -y apache2
+apt-get install -y apache2
 
 if [ "$?" -ne 0 ]; then
-    echo "${RED}Some error has occurred installing Apache2, exiting."
+    echo "${RED}Some error has occurred installing Apache2."
     exit 1
 else
     echo "${GREEN}Apache2 installed successfully."

@@ -1,14 +1,14 @@
 #!/bin/sh
 
-#——————————————————————————————————————————————————————————————
+#—————————————————————————————————————————————————————————————————
 
 # Name:     install-postgresql-10.sh
 
-# Purpose:  Install PostgreSQL and do some basic configuration.
+# Purpose:  Install PostgreSQL 10 and do some basic configuration.
 
 # Author:   Matteo Dello Ioio  https://github.com/jojoblaze
 
-#——————————————————————————————————————————————————————————————
+#—————————————————————————————————————————————————————————————————
 
 DB_USER=$1
 DB_USER_PASSWORD=$2

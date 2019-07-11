@@ -321,10 +321,11 @@
                         "autoUpgradeMinorVersion": true,
                         "settings": {
                             "fileUris": [
-                                "https://raw.githubusercontent.com/jojoblaze/my-osm/master/install-postgresql-10.sh",
-                                "https://raw.githubusercontent.com/jojoblaze/my-osm/master/install-postgresql-gis.sh",
-                                "https://raw.githubusercontent.com/jojoblaze/my-osm/master/install-osm-tile-server.sh",
-                                "https://raw.githubusercontent.com/jojoblaze/my-osm/master/install-osm.sh"
+                                "https://raw.githubusercontent.com/jojoblaze/my-osm/development/install-postgresql-10.sh",
+                                "https://raw.githubusercontent.com/jojoblaze/my-osm/development/install-postgresql-gis.sh",
+                                "https://raw.githubusercontent.com/jojoblaze/my-osm/development/install-apache2-web-server.sh",
+                                "https://raw.githubusercontent.com/jojoblaze/my-osm/development/install-osm-tile-server.sh",
+                                "https://raw.githubusercontent.com/jojoblaze/my-osm/development/install-osm.sh"
                             ]
                         },
                         "protectedSettings": {

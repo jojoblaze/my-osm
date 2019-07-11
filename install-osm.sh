@@ -2,7 +2,7 @@
 
 #——————————————————————————————————————————————————————————————
 
-# Name:     install-postgresql-10.sh
+# Name:     install-osm.sh
 
 # Purpose:  Setup a custom Openstreetmap tile server .
 
@@ -56,6 +56,8 @@ else
     echo "${GREEN}PostgreSQL installation successfully.${NC}"
 fi
 
+
+
 sh ./install-postgresql-gis.sh ${OSMUserName} ${OSMDBPassword} ${OSMDatabaseName} ${OSMRegion}
 
 if [ "$?" -ne 0 ]; then
@@ -64,6 +66,19 @@ if [ "$?" -ne 0 ]; then
 else
     echo "${GREEN}PostgreGIS installation successfully${NC}"
 fi
+
+
+
+sh ./install-apache2-web-server.sh "https://raw.githubusercontent.com/jojoblaze/my-osm/development/000-default.conf"
+
+if [ "$?" -ne 0 ]; then
+    echo "${RED}Something goes wrong in webserver installation${NC}"
+    exit 1
+else
+    echo "${GREEN}webserver installed successfully${NC}"
+fi
+
+
 
 sh ./install-osm-tile-server.sh ${OSMUserName}
 
