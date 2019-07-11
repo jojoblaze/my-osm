@@ -2,6 +2,11 @@
 
 OSMUserName=$1
 
+# Url of virtual host file.
+# example: https://raw.githubusercontent.com/jojoblaze/my-osm/master/000-default.conf
+VirtualHostUrl=$2
+VirtualHostFileName=$(basename ${VirtualHostUrl})
+
 # output coloring
 BLACK='\033[0;30m'
 RED='\033[0;31m'
@@ -28,7 +33,7 @@ OSMUserHome=/home/$OSMUserName
 
 echo "${CYAN}OSMUserName:${NC} ${OSMUserName}"
 echo "${CYAN}OSMUserHome:${NC} ${OSMUserHome}"
-
+echo "${CYAN}VirtualHostUrl:${NC} ${VirtualHostUrl}"
 
 
 echo "${GREEN}**********************${NC}"
@@ -268,6 +273,32 @@ fi
 echo "${GREEN}**************************${NC}"
 echo "${GREEN}*** Configuring Apache ***${NC}"
 echo "${GREEN}**************************${NC}"
+
+echo "Replace default virtual host file"
+cd /tmp
+wget "${VirtualHostUrl}"
+
+if [ "$?" -ne 0 ]; then
+    echo "Some error has occurred downloading Apache virtual host configuration."
+    exit 1
+else
+    echo "Apache virtual host configuration downloaded successfully."
+fi
+
+
+# mv 000-default.conf /etc/apache2/sites-available/000-default.conf
+mv "${VirtualHostFileName}" /etc/apache2/sites-available/"${VirtualHostFileName}"
+
+
+echo 'Restart Apache2.'
+sudo systemctl restart apache2
+
+if [ "$?" -ne 0 ]; then
+    echo "${RED}Some error has occurred restarting Apache2 service.${NC}"
+    exit 1
+fi
+
+
 
 sudo mkdir -p /var/lib/mod_tile
 

@@ -1,11 +1,5 @@
 #!/bin/sh
 
-# Url of virtual host file.
-# example: https://raw.githubusercontent.com/jojoblaze/my-osm/master/000-default.conf
-VirtualHostUrl=$1
-VirtualHostFileName=$(basename ${VirtualHostUrl})
-
-
 # output coloring
 BLACK='\033[0;30m'
 RED='\033[0;31m'
@@ -28,12 +22,6 @@ WHITE='\033[1;37m'
 NC='\033[0m' # No Color
 
 
-
-echo "${CYAN}VirtualHostUrl:${NC} ${VirtualHostUrl}"
-
-
-
-
 echo "${GREEN}***********************${NC}"
 echo "${GREEN}*** Install Apache2 ***${NC}"
 echo "${GREEN}***********************${NC}"
@@ -48,34 +36,4 @@ else
 fi
 
 
-
-echo "${GREEN}**************************${NC}"
-echo "${GREEN}*** Configuring Apache ***${NC}"
-echo "${GREEN}**************************${NC}"
-
-
-# Replace default virtual host file
-cd /tmp
-wget "${VirtualHostUrl}"
-
-if [ "$?" -ne 0 ]; then
-    echo "Some error has occurred downloading Apache virtual host configuration."
-    exit 1
-else
-    echo "Apache virtual host configuration downloaded successfully."
-fi
-
-
-# mv 000-default.conf /etc/apache2/sites-available/000-default.conf
-mv "${VirtualHostFileName}" /etc/apache2/sites-available/"${VirtualHostFileName}"
-
-
-echo 'Restart Apache2.'
-sudo systemctl restart apache2
-
-if [ "$?" -ne 0 ]; then
-    echo "${RED}Some error has occurred restarting Apache2 service.${NC}"
-    exit 1
-fi
-
-echo "${GREEN}Congrats! You just successfully built your own Apache2 web server.${NC}""
+echo "${GREEN}Congrats! You just successfully built your own Apache2 web server.${NC}"

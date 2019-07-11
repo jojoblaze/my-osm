@@ -69,7 +69,7 @@ fi
 
 
 
-sh ./install-apache2-web-server.sh "https://raw.githubusercontent.com/jojoblaze/my-osm/development/000-default.conf"
+sh ./install-apache2-web-server.sh
 
 if [ "$?" -ne 0 ]; then
     echo "${RED}Something goes wrong in webserver installation${NC}"
@@ -80,7 +80,7 @@ fi
 
 
 
-sh ./install-osm-tile-server.sh ${OSMUserName}
+sh ./install-osm-tile-server.sh ${OSMUserName} "https://raw.githubusercontent.com/jojoblaze/my-osm/development/000-default.conf"
 
 if [ "$?" -ne 0 ]; then
     echo "${RED}Something goes wrong in webserver configuration${NC}"
