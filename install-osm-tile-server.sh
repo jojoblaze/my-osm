@@ -198,16 +198,21 @@ sudo ldconfig
 
 
 
-echo "${GREEN}****************************${NC}"
-echo "${GREEN}*** Setting up webserver ***${NC}"
-echo "${GREEN}****************************${NC}"
+echo "${GREEN}**************************${NC}"
+echo "${GREEN}*** Setting up renderd ***${NC}"
+echo "${GREEN}**************************${NC}"
 
-# *** Configuring renderd ***
-echo '*** Configuring renderd ***'
 
 RENDERD_CONF_PATH=$OSMUserHome/src/mod_tile/renderd.conf
 # RENDERD_CONF_PATH='/usr/local/etc/renderd.conf'
 # RENDERD_CONF_PATH='/home/osm/src/mod_tile/debian/renderd.conf'
+
+echo 'creating /var/run/renderd folder...'
+sudo mkdir /var/run/renderd
+
+echo 'changing permissions to folder'
+sudo chown -R $OSMUserName /var/run/renderd
+
 
 if [ ! -f $RENDERD_CONF_PATH ]; then
     echo "File $RENDERD_CONF_PATH not found"
@@ -290,26 +295,15 @@ fi
 mv "${VirtualHostFileName}" /etc/apache2/sites-available/"${VirtualHostFileName}"
 
 
-echo 'Restart Apache2.'
-sudo systemctl restart apache2
 
-if [ "$?" -ne 0 ]; then
-    echo "${RED}Some error has occurred restarting Apache2 service.${NC}"
-    exit 1
-fi
-
-
+echo "${GREEN}***************************${NC}"
+echo "${GREEN}*** Setting up mod_tile ***${NC}"
+echo "${GREEN}***************************${NC}"
 
 sudo mkdir -p /var/lib/mod_tile
 
 echo 'changing permissions to folder'
 sudo chown -R $OSMUserName /var/lib/mod_tile
-
-echo 'creating /var/run/renderd folder...'
-sudo mkdir /var/run/renderd
-
-echo 'changing permissions to folder'
-sudo chown -R $OSMUserName /var/run/renderd
 
 
 
@@ -333,7 +327,13 @@ else
 
 fi
 
+echo 'Restart Apache2.'
+sudo systemctl restart apache2
 
+if [ "$?" -ne 0 ]; then
+    echo "${RED}Some error has occurred restarting Apache2 service.${NC}"
+    exit 1
+fi
 
 # start renderd service
 echo 'start renderd service'
