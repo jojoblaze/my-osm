@@ -104,6 +104,9 @@ europe/italy/north-east)
     MapDataFileName=$ItalyNorthEastMapFileName
     MapDataUri=$MapDataUriItaly
     ;;
+europe/italy/lombardia)
+    MapDataFileName=lombardia.pbf
+    MapDataUri=http://geodati.fmach.it/gfoss_geodata/osm/output_osm_regioni
 europe/italy/center)
     MapDataFileName=$ItalyCenterMapFileName
     MapDataUri=$MapDataUriItaly

@@ -32,6 +32,12 @@
                 "description": "GIS OSM database name."
             }
         },
+        "osmRegion": {
+            "type": "string",
+            "metadata": {
+                "description": "Map region name. (in the format europe/italy/lombardia)"
+            }
+        },
         "authenticationType": {
             "type": "string",
             "defaultValue": "sshPublicKey",
@@ -124,7 +130,7 @@
         },
         "subnetRef": "[resourceId('Microsoft.Network/virtualNetworks/subnets', variables('virtualNetworkName'), variables('subnetName'))]",
         "networkSecurityGroup": "mySecurityGroup",
-        "osmRegion": "europe/italy/north-west"
+        "osmRegion": "[parameters('osmRegion')]"
     },
     "functions": [],
     "resources": [

@@ -37,6 +37,9 @@
     },
     "osmDBName": {
       "value": "gis"
+    },
+    "osmRegion": {
+      "value": "europe/italy/lombardia"
     }
   }
 }
