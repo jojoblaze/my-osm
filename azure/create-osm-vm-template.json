@@ -35,7 +35,7 @@
         "osmRegion": {
             "type": "string",
             "metadata": {
-                "description": "Map region name. (in the format europe/italy/lombardia)"
+                "description": "Map region name. (in the format europe/italy/north-west)"
             }
         },
         "authenticationType": {
