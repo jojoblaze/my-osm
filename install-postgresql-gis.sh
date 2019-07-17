@@ -14,7 +14,9 @@
 OSMUserName=$1
 OSMDBPassword=$2
 OSMDatabaseName=$3
-OSMRegion=$4
+OSMMapDataUrl=$4
+
+MapDataFileName=$(basename ${OSMMapDataUrl})
 
 # output coloring
 BLACK='\033[0;30m'
@@ -42,93 +44,13 @@ NC='\033[0m' # No Color
 echo "${CYAN}OSMUserName:${NC} ${OSMUserName}"
 echo "${CYAN}OSMDBPassword:${NC} ${OSMDBPassword}"
 echo "${CYAN}OSMDatabaseName:${NC} ${OSMDatabaseName}"
-echo "${CYAN}OSMRegion:${NC} ${OSMRegion}"
-
-MapDataUri=http://download.geofabrik.de
-
-AfricaMapFileName=africa-latest.osm.pbf
-AntarcticaMapFileName=antarctica-latest.osm.pbf
-AsiaMapFileName=asia-latest.osm.pbf
-AustraliaMapFileName=australia-oceania-latest.osm.pbf
-EuropeMapFileName=europe-latest.osm.pbf
-CentralAmericaMapFileName=central-america-latest.osm.pbf
-NorthAmericaMapFileName=north-america-latest.osm.pbf
-SouthAmericaMapFileName=south-america-latest.osm.pbf
-
-# *** Europe ***
-MapDataUriEurope=https://download.geofabrik.de/europe
-ItalyMapFileName=italy-latest.osm.pbf
-
-# *** Italy ***
-MapDataUriItaly=https://download.geofabrik.de/europe/italy
-ItalyNorthWestMapFileName=nord-ovest-latest.osm.pbf
-ItalyNorthEastMapFileName=nord-est.osm.pbf
-ItalyCenterMapFileName=centro-latest.osm.pbf
-ItalySouthMapFileName=sud-latest.osm.pbf
-ItalyIslandsMapFileName=isole-latest.osm.pbf
-
-case ${OSMRegion} in
-africa)
-    MapDataFileName=$AfricaMapFileName
-    ;;
-antarctica)
-    MapDataFileName=$AntarcticaMapFileName
-    ;;
-asia)
-    MapDataFileName=$AsiaMapFileName
-    ;;
-australia-oceania)
-    MapDataFileName=$AustraliaMapFileName
-    ;;
-north-america)
-    MapDataFileName=$NorthAmericaMapFileName
-    ;;
-central-america)
-    MapDataFileName=$CentralAmericaMapFileName
-    ;;
-south-america)
-    MapDataFileName=$SouthAmericaMapFileName
-    ;;
-europe)
-    MapDataFileName=$EuropeMapFileName
-    ;;
-europe/italy | italy)
-    MapDataFileName=$ItalyMapFileName
-    MapDataUri=$MapDataUriEurope
-    ;;
-europe/italy/north-west)
-    MapDataFileName=$ItalyNorthWestMapFileName
-    MapDataUri=$MapDataUriItaly
-    ;;
-europe/italy/lombardia)
-    MapDataFileName=lombardia.pbf
-    MapDataUri=http://geodati.fmach.it/gfoss_geodata/osm/output_osm_regioni
-    ;;
-europe/italy/north-east)
-    MapDataFileName=$ItalyNorthEastMapFileName
-    MapDataUri=$MapDataUriItaly
-    ;;
-europe/italy/center)
-    MapDataFileName=$ItalyCenterMapFileName
-    MapDataUri=$MapDataUriItaly
-    ;;
-europe/italy/south)
-    MapDataFileName=$ItalySouthMapFileName
-    MapDataUri=$MapDataUriItaly
-    ;;
-europe/italy/islands)
-    MapDataFileName=$ItalyIslandsMapFileName
-    MapDataUri=$MapDataUriItaly
-    ;;
-*)
-    echo "${RED}Unkown country or territory${NC}"
-    exit 1
-    ;;
-esac
-
+echo "${CYAN}OSMMapDataUrl:${NC} ${OSMMapDataUrl}"
+echo "${CYAN}MapDataFileName:${NC} ${MapDataFileName}"
 
 
 OSMUserHome=/home/${OSMUserName}
+
+
 
 echo "${GREEN}**********************${NC}"
 echo "${GREEN}*** Prepare system ***${NC}"
@@ -279,7 +201,7 @@ echo "${GREEN}*************************${NC}"
 echo "${GREEN}*** Download Map Data ***${NC}"
 echo "${GREEN}*************************${NC}"
 
-echo "downloading from ${MapDataUri}/${MapDataFileName}"
+echo "downloading from ${MapDataUrl}"
 # sudo su - $OSMUserName
 
 if [ ! -d ${OSMUserHome}/data ]; then
@@ -302,7 +224,7 @@ fi
 
 cd ${OSMUserHome}/data
 
-wget -c ${MapDataUri}/${MapDataFileName}
+wget -c ${MapDataUrl}
 # wget -c $(~/map_data_url_provider.sh ${OSMRegion})
 
 # Recommendations before Importing Map Data
@@ -380,8 +302,7 @@ echo "${GREEN}*** Import the Map Data to PostgreSQL ***${NC}"
 echo "${GREEN}*****************************************${NC}"
 
 echo 'running osm2pgsql'
-# osm2pgsql -U postgres --slim -d ${OSMDatabaseName} -C 1800 --hstore --create -G --number-processes 1 ~/data/${MapDataFileName}
-osm2pgsql -U postgres --slim -d ${OSMDatabaseName} -C 1800 --hstore --tag-transform-script ${OSMUserHome}/src/openstreetmap-carto/openstreetmap-carto.lua --create -G --number-processes 1 -S ${OSMUserHome}/src/openstreetmap-carto/openstreetmap-carto.style ${OSMUserHome}/data/${MapDataFileName}
+osm2pgsql -U postgres --slim -d ${OSMDatabaseName} -C 1800 --hstore --tag-transform-script ${OSMUserHome}/src/openstreetmap-carto/openstreetmap-carto.lua --create -G --number-processes 2 -S ${OSMUserHome}/src/openstreetmap-carto/openstreetmap-carto.style ${OSMUserHome}/data/${MapDataFileName}
 
 # osm2pgsql -U $OSMUserName --slim -d ${OSMDatabaseName} -C 1800 --hstore --create -G --number-processes 1 ~/data/${MapDataFileName}
 # osm2pgsql -U postgres --slim -d ${OSMDatabaseName} -C 1800 --hstore -S ~/src/openstreetmap-carto/openstreetmap-carto.style --create -G --tag-transform-script ~/src/openstreetmap-carto/openstreetmap-carto.lua --number-processes 1  ~/data/${MapDataFileName}
