@@ -58,7 +58,7 @@ fi
 
 
 
-MAP_DATA_URL=$(sh ./map_data_url_provider.sh ${OSMRegion})
+MAP_DATA_URL=$(sh ./map_data_url_provider.sh "${OSMRegion}")
 
 if [ "$?" -ne 0 ]; then
     echo "${RED}Unable to retrieve map data url.${NC}"
