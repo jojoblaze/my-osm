@@ -297,9 +297,9 @@ carto project.mml | tee mapnik.xml
 
 
 
-echo "${GREEN}*****************************************${NC}"
-echo "${GREEN}*** Import the Map Data to PostgreSQL ***${NC}"
-echo "${GREEN}*****************************************${NC}"
+echo "${GREEN}*************************************${NC}"
+echo "${GREEN}*** Import Map Data to PostgreSQL ***${NC}"
+echo "${GREEN}*************************************${NC}"
 
 echo 'running osm2pgsql'
 osm2pgsql -U postgres --slim -d ${OSMDatabaseName} -C 1800 --hstore --tag-transform-script ${OSMUserHome}/src/openstreetmap-carto/openstreetmap-carto.lua --create -G --number-processes 2 -S ${OSMUserHome}/src/openstreetmap-carto/openstreetmap-carto.style ${OSMUserHome}/data/${MapDataFileName}

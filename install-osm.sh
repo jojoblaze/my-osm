@@ -58,18 +58,18 @@ fi
 
 
 
-MAP_DATA_URL=$(sh ./map_data_url_provider.sh ${OSMRegion})
-echo "MAP_DATA_URL: ${MAP_DATA_URL}"
+OSMMapDataUrl=$(./map_data_url_provider.sh "${OSMRegion}")
+echo "OSMMapDataUrl: ${OSMMapDataUrl}"
 
 if [ "$?" -ne 0 ]; then
     echo "${RED}Unable to retrieve map data url.${NC}"
     exit 1
 else
-    echo "${GREEN}Maps data will be downloaded from '${MAP_DATA_URL}'.${NC}"
+    echo "${GREEN}Maps data will be downloaded from '${OSMMapDataUrl}'.${NC}"
 fi
 
 
-sh ./install-postgresql-gis.sh ${OSMUserName} ${OSMDBPassword} ${OSMDatabaseName} ${MAP_DATA_URL}
+sh ./install-postgresql-gis.sh ${OSMUserName} ${OSMDBPassword} ${OSMDatabaseName} ${OSMMapDataUrl}
 
 if [ "$?" -ne 0 ]; then
     echo "${RED}Something goes wrong in PostgreGIS installation${NC}"
