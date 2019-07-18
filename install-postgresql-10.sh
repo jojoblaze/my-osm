@@ -40,8 +40,9 @@ echo "${GREEN}**************************************************${NC}"
 echo "${GREEN}*** Adding PostgreSQL repository to the system ***${NC}"
 echo "${GREEN}**************************************************${NC}"
 
-wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo apt-key add -
-sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt/ $(lsb_release -sc)-pgdg main" > /etc/apt/sources.list.d/PostgreSQL.list'
+wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc -O- | sudo apt-key add -
+# sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt/ $(lsb_release -sc)-pgdg main" > /etc/apt/sources.list.d/PostgreSQL.list'
+sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt/ $(lsb_release -sc)-pgdg main" | sudo tee /etc/apt/sources.list.d/postgresql.list'
 
 
 
@@ -61,8 +62,8 @@ export DEBIAN_FRONTEND=noninteractive
 echo "${GREEN}*******************************************************${NC}"
 echo "${GREEN}*** Install PostgreSQL Database Server with PostGIS ***${NC}"
 echo "${GREEN}*******************************************************${NC}"
-# sudo apt-get install -y postgresql postgresql-contrib postgresql-client-common postgis postgresql-10-postgis-2.4 postgresql-10-postgis-scripts
-apt-get install -y postgresql postgresql-contrib postgresql-client-common postgis postgresql-10-postgis-2.4 postgresql-10-postgis-scripts
+# apt-get install -y postgresql postgresql-contrib postgresql-client-common postgis postgresql-10-postgis-2.4 postgresql-10-postgis-scripts
+apt-get install -y postgresql-10 postgresql-contrib postgresql-client-common postgis postgresql-10-postgis-2.4 postgresql-10-postgis-2.4-scripts
 
 if [ "$?" -ne 0 ]; then
     echo "${RED}Some error has occurred installing PostgreSQL packages.${NC}"
