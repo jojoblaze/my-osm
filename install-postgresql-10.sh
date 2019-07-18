@@ -36,8 +36,17 @@ NC='\033[0m' # No Color
 
 
 
+echo "${GREEN}**************************************************${NC}"
+echo "${GREEN}*** Adding PostgreSQL repository to the system ***${NC}"
+echo "${GREEN}**************************************************${NC}"
+
+wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo apt-key add -
+sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt/ $(lsb_release -sc)-pgdg main" > /etc/apt/sources.list.d/PostgreSQL.list'
+
+
+
 echo "${GREEN}****************************${NC}"
-echo "${GREEN}*** Preparing the system ***${NC}"
+echo "${GREEN}*** Updating the system ***${NC}"
 echo "${GREEN}****************************${NC}"
 
 echo 'Updating the system'
