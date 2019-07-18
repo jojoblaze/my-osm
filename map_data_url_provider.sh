@@ -26,8 +26,6 @@ NC='\033[0m' # No Color
 programname=$0
 OSMRegion=$1
 
-echo "${CYAN}OSMRegion:${NC} ${OSMRegion}"
-
 
 function usage() {
     echo "usage: $programname [region]"
@@ -129,7 +127,7 @@ europe/italy/islands)
     MapDataUri=$MapDataUriItaly
     ;;
 *)
-    echo '@@@ Unkown country or territory @@@'
+    echo 'Unkown region: [${OSMRegion}]'
     exit 1
     ;;
 esac
