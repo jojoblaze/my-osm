@@ -201,7 +201,7 @@ echo "${GREEN}*************************${NC}"
 echo "${GREEN}*** Download Map Data ***${NC}"
 echo "${GREEN}*************************${NC}"
 
-echo "downloading from ${MapDataUrl}"
+echo "downloading from ${OSMMapDataUrl}"
 # sudo su - $OSMUserName
 
 if [ ! -d ${OSMUserHome}/data ]; then
@@ -224,7 +224,7 @@ fi
 
 cd ${OSMUserHome}/data
 
-wget -c ${MapDataUrl}
+wget -c ${OSMMapDataUrl}
 # wget -c $(~/map_data_url_provider.sh ${OSMRegion})
 
 # Recommendations before Importing Map Data
